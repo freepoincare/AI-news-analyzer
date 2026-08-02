@@ -40,10 +40,13 @@ python main.py fetch --source <source> [--limit <number>]
 
 ## Options
 
-| Option | Required | Default | Description |
-|---|---|---|---|
-| `--source` | Yes | None | News source to collect from |
-| `--limit` | No | `10` | Maximum number of articles to collect |
+| Option       | Required | Default | Description                              |
+| ------------ | -------- | ------- | ---------------------------------------- |
+| `--source`   | Yes      | None    | News source to collect from              |
+| `--limit`    | No       | `10`    | Maximum number of articles to collect    |
+| `--category` | Yes      | None    | Predefined news category to collect from |
+| `--query`    | Yes      | None    | Search query used to find news articles  |
+
 
 ## Valid Sources
 
@@ -59,7 +62,7 @@ naver
 ### (1) Fetch default number of articles
 
 ```bash
-python main.py fetch --source naver
+python main.py fetch --source naver --category technology --query "artificial intelligence"
 ```
 
 Result:
@@ -67,6 +70,8 @@ Result:
 ```python
 args.source = "naver"
 args.limit = 10
+args.category = "technology"
+args.query = "artificial intelligence"
 ```
 
 ---
@@ -74,7 +79,7 @@ args.limit = 10
 ### (2) Fetch a specific number of articles
 
 ```bash
-python main.py fetch --source google --limit 50
+python main.py fetch --source google --limit 50 --category technology --query "artificial intelligence"
 ```
 
 Result:
@@ -82,6 +87,8 @@ Result:
 ```python
 args.source = "google"
 args.limit = 50
+args.category = "technology"
+args.query = "artificial intelligence"
 ```
 
 ---
@@ -99,7 +106,7 @@ python main.py fetch
 Error:
 
 ```text
-error: the following arguments are required: --source
+error: the following arguments are required: --source, --category, --query
 ```
 
 ---

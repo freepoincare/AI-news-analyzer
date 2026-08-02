@@ -31,3 +31,12 @@
 
 2026.08.03(월)
 장소:
+
+---
+
+Confusing things in the mission statement:
+1. 왜 예제에서 fetch에 --category나 --query가 없는 건지? (나는 넣었음) 카테고리 필요없이 모든 주제의 뉴스를 수집해야 하는 건지?
+2. 왜 fetch에 --date-from 과 --date-to 가 없는 건지? (나는 넣었음)
+3. --source naver 라고 예시에 들었고 API/RSS와 크롤링 두 가지 방법 모두 구현한다고 했는데 왜 '--source naver' 가 나오는지?
+fetch 의 옵션에서 --source의 choices에 naver나 구글이 들어가는 것이 아니라 이렇게 choices=["rss", "api", "crawler"] 되야 하는 것이 아닌지?
+4.  

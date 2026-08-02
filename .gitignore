@@ -26,3 +26,7 @@ Thumbs.db
 
 # --- temporarily ignored ---
 /archive
+
+# --- Logs ---
+logs/
+app.log
