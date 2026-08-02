@@ -1,0 +1,28 @@
+# --- Python Bytecode & Cache ---
+# Python cache and temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# --- Environment & Tools ---
+# Virtual environments (exclude if using venv or conda locally)
+venv/
+.venv/
+env/
+
+# IDE specific files
+# Exclude VS Code settings and personal workspace files
+.vscode/
+.idea/
+
+# --- System Files ---
+# OS temporary files
+.DS_Store
+Thumbs.db
+
+# --- Project data ---
+# prompts.json
+
+# --- temporarily ignored ---
+/archive
