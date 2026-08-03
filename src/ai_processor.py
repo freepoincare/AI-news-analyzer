@@ -1,3 +1,9 @@
+from .config import GEMINI_API_KEY
+
+if not GEMINI_API_KEY:
+    raise EnvironmentError("GEMINI_API_KEY environment variable is not set")
+
+
 def summarize_news(args):
     if args.all:
         print(f"Summarizing all available news articles (limit: {args.limit})...")

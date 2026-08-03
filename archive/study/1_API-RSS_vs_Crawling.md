@@ -34,6 +34,47 @@ def get_news_via_api(query):
 # '인공지능' 관련 뉴스 5개 출력
 get_news_via_api("인공지능")
 ```
+Refer to this: 
+* https://newsapi.org/docs/get-started
+* https://newsapi.org/docs/endpoints/everything
+
+
+Example response:
+```json
+{
+    "status": "ok", 
+    "totalResults": 269,
+   -"articles": [
+        -{
+            -"source": {
+                "id": null,
+                "name": "Hipertextual"
+            },
+            "author": "Luis Miranda",
+            "title": "Google TV tiene un modo oculto que desactiva todos los anuncios de tu televisor",
+            "description": "Si tu smart TV hace demasiadas cosas que no pediste, hay una opción que quizás deberías usar dentro de Google TV. Desde hace unos años, los televisores inteligentes se volvieron una máquina que recolecta datos sobre lo que ves y muestra anuncios. En casos más…",
+            "url": "https://hipertextual.com/tecnologia/modo-basico-google-tv-dumb-tv/",
+            "urlToImage": "https://i0.wp.com/imgs.hipertextual.com/wp-content/uploads/2026/07/google-tv-pantalla.jpg?fit=2400%2C1602&quality=70&strip=all&ssl=1",
+            "publishedAt": "2026-08-02T07:00:00Z",
+            "content": "Si tu smart TV hace demasiadas cosas que no pediste, hay una opción que quizás deberías usar dentro de Google TV. Desde hace unos años, los televisores inteligentes se volvieron una máquina que recol… [+4651 chars]"
+        },
+        -{
+            -"source": {
+                "id": null,
+                "name": "Xataka.com"
+            },
+            "author": "Alberto García",
+            "title": "Las mejores ofertas en tecnología y entretenimiento de El Corte Inglés y MediaMarkt, hoy 2 de agosto",
+            "description": "Tanto MediaMarkt como El Corte Inglés han empezado el mes de agosto por todo lo alto con muchas ofertas en tecnología y entretenimiento. Si estás buscando unas gafas para ver el eclipse, unos buenos auriculares de diadema o una consola, mucho ojo a estas cinc…",
+            "url": "https://www.xataka.com/seleccion/mejores-ofertas-tecnologia-entretenimiento-corte-ingles-mediamarkt-hoy-2-agosto",
+            "urlToImage": "https://i.blogs.es/afc545/el-corte-ingles-y-mediamarkt/840_560.jpeg",
+            "publishedAt": "2026-08-02T08:45:43Z",
+            "content": "Tanto MediaMarkt como El Corte Inglés han empezado el mes de agosto por todo lo alto con muchas ofertas en tecnología y entretenimiento. Si estás buscando unas gafas para ver el eclipse, unos buenos … [+3166 chars]"
+        },
+        ...
+    ]
+}
+```
 
 ---
 

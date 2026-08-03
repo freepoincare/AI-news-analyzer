@@ -11,7 +11,7 @@ def parse_arguments():
     fetch_parser.add_argument("--source", type=str, required=True, choices=['rss', 'api', 'crawler'], help="The news source name to fetch articles from")
     fetch_parser.add_argument("--limit", type=int, default=10, help="Maximum number of articles to fetch (default: 10)")  # required=False is default -> optional, but writing '--limit' w/o value will raise an error.
     fetch_parser.add_argument("--category", type=str, required=True, choices=CATEGORIES, help="News category to fetch articles from")
-    fetch_parser.add_argument("--query", type=str, required=True, help="Search query for fetching news articles")
+    fetch_parser.add_argument("--query", type=str, required=True, help="Search query for fetching news articles (limited to 500 characters)")
     fetch_parser.add_argument("--date-from", type=str, help="Start date for fetching articles (YYYY-MM-DD)")
     fetch_parser.add_argument("--date-to", type=str, help="End date for fetching articles (YYYY-MM-DD)")
 
@@ -62,4 +62,4 @@ def parse_arguments():
     # category_group.add_argument("--add", type=str, help="Add a new category")
     # category_group.add_argument("--remove", type=str, help="Remove an existing category")
 
-    return parser.parse_args()
+    return parser.parse_args()  # args

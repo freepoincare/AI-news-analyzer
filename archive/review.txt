@@ -40,3 +40,8 @@ Confusing things in the mission statement:
 3. --source naver 라고 예시에 들었고 API/RSS와 크롤링 두 가지 방법 모두 구현한다고 했는데 왜 '--source naver' 가 나오는지?
 fetch 의 옵션에서 --source의 choices에 naver나 구글이 들어가는 것이 아니라 이렇게 choices=["rss", "api", "crawler"] 되야 하는 것이 아닌지?
 4.  
+
+---
+
+Todo later
+1. ask antigravity cli to update requirement.txt, CLI_usage_documentation.md, and .gitignore

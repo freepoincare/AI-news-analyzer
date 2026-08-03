@@ -10,6 +10,7 @@ __pycache__/
 venv/
 .venv/
 env/
+.env
 
 # IDE specific files
 # Exclude VS Code settings and personal workspace files

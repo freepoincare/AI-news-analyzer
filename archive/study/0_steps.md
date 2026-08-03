@@ -50,6 +50,11 @@ Create tables to store each processing stage:
 * **Method 2 (Crawling):** Scrape article bodies using `BeautifulSoup` or `Selenium` with polite request delays (`time.sleep(1)`).
 * Save raw payloads directly into the `raw_news` database table.
 
+```
+RSS/API/crawler collection
+normalization
+save_raw_news()
+```
 
 ## 4. Implement Data Cleaning (clean):
 
@@ -60,6 +65,13 @@ Create tables to store each processing stage:
     * `skip`: Ignore duplicate records.
     * `upsert`: Update existing record fields with new data.
 * Store sanitized rows in the `clean_news` database table.
+
+```
+read raw_news
+remove duplicates
+clean text/date
+save clean_news()
+```
 
 
 ## 5. **Implement AI Summarization (summarize):
@@ -96,6 +108,11 @@ Create tables to store each processing stage:
 
 * Accept status filters (e.g., `--status summarized`).
 * Export filtered data to **CSV**, **JSONL**, or **Excel (`.xlsx`)** files.
+
+```
+read clean_news
+export CSV/JSONL/XLSX
+```
 
 
 ## 9. Assemble the CLI (main.py):
