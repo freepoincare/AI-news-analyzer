@@ -182,3 +182,53 @@ def save_clean_news(records, policy="skip"):
                 )
             )
         connection.commit()
+
+
+def get_raw_news():
+    """Return all records from raw_news as a list of dicts."""
+    with get_connection() as connection:
+        rows = connection.execute(
+            "SELECT * FROM raw_news ORDER BY id"
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def get_clean_news(*, article_id=None, status=None, category=None,
+                   date_from=None, date_to=None, limit=None):
+    """Query clean_news with optional filters and return a list of dicts.
+
+    Args:
+        article_id: Return only the record with this ID.
+        status:     Filter by 'summarized' or 'unsummarized'. None = all.
+        category:   Filter by category string.
+        date_from:  Include records where published_at >= date_from (YYYY-MM-DD).
+        date_to:    Include records where published_at <= date_to (YYYY-MM-DD).
+        limit:      Maximum number of records to return.
+    """
+    conditions = []
+    params = []
+
+    if article_id is not None:
+        conditions.append("id = ?")
+        params.append(article_id)
+    if status:
+        conditions.append("status = ?")
+        params.append(status)
+    if category:
+        conditions.append("category = ?")
+        params.append(category)
+    if date_from:
+        conditions.append("published_at >= ?")
+        params.append(date_from)
+    if date_to:
+        conditions.append("published_at <= ?")
+        params.append(date_to)
+
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    limit_clause = f"LIMIT {int(limit)}" if limit else ""
+
+    sql = f"SELECT * FROM clean_news {where_clause} ORDER BY published_at DESC {limit_clause}"
+
+    with get_connection() as connection:
+        rows = connection.execute(sql, params).fetchall()
+        return [dict(row) for row in rows]
