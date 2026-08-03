@@ -2,9 +2,10 @@ import logging
 from src.arg_parser import parse_arguments
 from src.collector import collect_news
 from src.cleaner import clean_news
-from src.ai_processor import summarize_news, analyze_news
+#from src.ai_processor import summarize_news, analyze_news
 from src.reporter import generate_report
 from src.exporter import export_news
+from src.database import initialize_database
 
 
 logging.basicConfig(
@@ -24,13 +25,14 @@ def show_news(args):
 
 
 def main():
+    initialize_database()
     args = parse_arguments()
 
     commands = {
         "fetch": collect_news,
         "clean": clean_news,
-        "summarize": summarize_news,
-        "analyze": analyze_news,
+        #"summarize": summarize_news,
+        #"analyze": analyze_news,
         "report": generate_report,
         "export": export_news,
         "list": list_news,

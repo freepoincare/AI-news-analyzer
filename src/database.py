@@ -49,6 +49,7 @@ def initialize_database():
                 published_at TEXT,
                 snippet TEXT,
                 content TEXT,
+                category TEXT,
 
                 unique_guid TEXT,
                 method TEXT,
@@ -59,12 +60,38 @@ def initialize_database():
             )
             """
         )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS clean_news (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                title TEXT NOT NULL,
+                url TEXT,
+                source TEXT,
+                published_at TEXT,
+                snippet TEXT,
+                content TEXT,
+                category TEXT,
+
+                unique_guid TEXT UNIQUE,
+                method TEXT,
+                query TEXT,
+                collected_at TEXT,
+
+                summary TEXT,
+                status TEXT DEFAULT 'unsummarized'
+            )
+            """
+        )
         connection.commit()
 
 
 def save_raw_news(records):
-    """Save collected news records to the raw_news table."""
+    """Save collected news records to the raw_news table (plain INSERT, no deduplication).
 
+    Raw storage is an unfiltered archive. Deduplication is handled later
+    by save_clean_news() during the 'clean' step.
+    """
     with get_connection() as connection:
         for record in records:
             raw_value = record["raw"]
@@ -80,16 +107,14 @@ def save_raw_news(records):
                     published_at,
                     snippet,
                     content,
+                    category,
                     unique_guid,
                     method,
                     query,
                     collected_at,
                     raw_data
                 )
-                VALUES (
-                    ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?
-                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     record["title"],
@@ -98,11 +123,62 @@ def save_raw_news(records):
                     record["published_at"],
                     record["snippet"],
                     record["content"],
+                    record.get("category", ""),
                     record["unique_guid"],
                     record["method"],
                     record["query"],
                     record["collected_at"],
                     raw_value,
+                )
+            )
+        connection.commit()
+
+
+def save_clean_news(records, policy="skip"):
+    """Promote cleaned records into the clean_news table.
+
+    Args:
+        records: List of cleaned record dicts (same schema as raw, but
+                 with normalised fields).
+        policy:  'skip'   – INSERT OR IGNORE: keep existing row untouched.
+                 'upsert' – INSERT OR REPLACE: overwrite existing row.
+    """
+    if policy == "upsert":
+        insert_sql = "INSERT OR REPLACE"
+    else:  # default: skip
+        insert_sql = "INSERT OR IGNORE"
+
+    with get_connection() as connection:
+        for record in records:
+            connection.execute(
+                f"""
+                {insert_sql} INTO clean_news (
+                    title,
+                    url,
+                    source,
+                    published_at,
+                    snippet,
+                    content,
+                    category,
+                    unique_guid,
+                    method,
+                    query,
+                    collected_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    record["title"],
+                    record["url"],
+                    record["source"],
+                    record["published_at"],
+                    record["snippet"],
+                    record["content"],
+                    record.get("category", ""),
+                    record["unique_guid"],
+                    record["method"],
+                    record["query"],
+                    record["collected_at"],
                 )
             )
         connection.commit()

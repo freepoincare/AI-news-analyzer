@@ -26,8 +26,15 @@ Thumbs.db
 # prompts.json
 
 # --- temporarily ignored ---
-/archive
+archive/
 
 # --- Logs ---
 logs/
 app.log
+
+# --- tests ---
+test_collector.py
+
+# --- Data Files ---
+data/*
+!data/.gitkeep

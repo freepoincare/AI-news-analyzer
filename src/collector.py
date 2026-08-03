@@ -47,7 +47,7 @@ _DATE_PATTERN = re.compile(r"\d{4}[.\-]\d{2}[.\-]\d{2}|\d+[분시일주개월년
 logger = logging.getLogger(__name__)
 
 
-def _base_record(*, title, url, source, published_at, snippet, content, unique_guid, method, query, raw):
+def _base_record(*, title, url, source, published_at, snippet, content, unique_guid, method, query, category, raw):
     """Create a common record schema for all news sources (RSS, API, Crawler)"""
     return {
         "title": title,
@@ -59,6 +59,7 @@ def _base_record(*, title, url, source, published_at, snippet, content, unique_g
         "unique_guid": unique_guid,
         "method": method,
         "query": query,
+        "category": category,
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "raw": raw,
     }
@@ -86,7 +87,7 @@ def resolve_google_rss_link(google_link):
         return google_link
 
 
-def normalize_rss_entry(entry, query):
+def normalize_rss_entry(entry, query, category):
     link = entry.get("link", "")
     resolved = resolve_google_rss_link(link) if "news.google.com" in link else link
     return _base_record(
@@ -99,11 +100,12 @@ def normalize_rss_entry(entry, query):
         unique_guid=resolved,  # Resolve Google News RSS link to actual article URL
         method="rss",
         query=query,
+        category=category,
         raw=dict(entry)  # Store the entire entry as raw data
     )
 
 
-def normalize_api_article(article, query):
+def normalize_api_article(article, query, category):
     return _base_record(
         title=article.get("title", ""),
         url=article.get("url", ""),
@@ -114,11 +116,12 @@ def normalize_api_article(article, query):
         unique_guid=article.get("url", ""),  # Use URL as unique identifier
         method="api",
         query=query,
+        category=category,
         raw=dict(article)  # Store the entire article as raw data
     )
 
 
-def normalize_crawler_article(*, title, url, source, published_at, snippet, query, raw):
+def normalize_crawler_article(*, title, url, source, published_at, snippet, query, category, raw):
     return _base_record(
         title=title,
         url=url,
@@ -129,22 +132,23 @@ def normalize_crawler_article(*, title, url, source, published_at, snippet, quer
         unique_guid=url,
         method="crawler",
         query=query,
+        category=category,
         raw=raw,
     )
 
 
-def get_news_via_rss(query_text, limit):
+def get_news_via_rss(query_text, limit, category):
     encoded = quote_plus(query_text)
     rss_url = f"{RSS_URL}?q={encoded}&hl=en-US&gl=US&ceid=US:en"
     response = requests.get(rss_url, timeout=10)    # requests controls the timeout
     response.raise_for_status()                     # handles HTTP errors (4xx, 5xx) in the calling function
     feed = feedparser.parse(response.content)       # parses the downloaded RSS content; feed object contains feed.feed and feed.entries
-    return [normalize_rss_entry(entry, query_text) for entry in feed.entries[:limit]]
+    return [normalize_rss_entry(entry, query_text, category) for entry in feed.entries[:limit]]
 
 
-def get_news_via_api(query_text, limit, date_from=None, date_to=None):
+def get_news_via_api(query_text, limit, category, date_from=None, date_to=None):
 
-    # only rasing error when using API, because RSS and Crawler do not require API keys.
+    # only raising error when using API, because RSS and Crawler do not require API keys.
     if not NEWS_API_KEY:
         raise EnvironmentError("NEWS_API_KEY environment variable is not set")
 
@@ -153,7 +157,7 @@ def get_news_via_api(query_text, limit, date_from=None, date_to=None):
         "apiKey": NEWS_API_KEY,
         "sortBy": "popularity", # popularity: articles from popular sources and publishers come first.
         "language": LANGUAGE,
-        "pageSize": limit       # pageSize: when omitted, default 100, max 100
+        "pageSize": limit,       # pageSize: when omitted, default 100, max 100
     }
 
     if date_from:
@@ -166,10 +170,10 @@ def get_news_via_api(query_text, limit, date_from=None, date_to=None):
     data = response.json()
     articles = data.get("articles", [])
 
-    return [normalize_api_article(a, query_text) for a in articles]
+    return [normalize_api_article(a, query_text, category) for a in articles]
 
 
-def get_news_via_crawler(query_text, limit):
+def get_news_via_crawler(query_text, limit, category):
     query = quote_plus(query_text)
     url = f"{CRAWLER_URL}?where=news&query={query}"
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -204,6 +208,7 @@ def get_news_via_crawler(query_text, limit):
             published_at=published_at,
             snippet=(snippet_tag.get_text(" ", strip=True) if snippet_tag else ""),
             query=query_text,
+            category=category,
             raw=item.prettify()  # Store the entire HTML of the news item
         ))
 
@@ -216,16 +221,17 @@ def collect_news(args):
 
     try:
         if args.source == "rss":
-            articles = get_news_via_rss(args.query, args.limit)
+            articles = get_news_via_rss(args.query, args.limit, args.category)
         elif args.source == "api":
             articles = get_news_via_api(
                 args.query,
                 args.limit,
+                args.category,
                 getattr(args, "date_from", None),
                 getattr(args, "date_to", None),
             )
         elif args.source == "crawler":
-            articles = get_news_via_crawler(args.query, args.limit)
+            articles = get_news_via_crawler(args.query, args.limit, args.category)
         else:  # parse_arguments() already restricts the choices, but this is a safeguard.
             logger.error(f"Unknown news source: {args.source}")
             return
