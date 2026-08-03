@@ -3,13 +3,16 @@ cleaner.py: validate, normalize, enrich, and deduplicate raw news records.
 
 Pipeline (called by 'python main.py clean --policy skip|upsert'):
 
+Check if raw_news table is empty → abort with message
+      │
+      ▼
   raw_news table
       │
-      ├── validate required fields (title, url)
+      ├── (1) validate required fields (title, url)
       ├── normalize text  (strip HTML tags, collapse whitespace)
       ├── normalize date  (parse to YYYY-MM-DD)
       ├── handle missing values
-      └── fetch full article body via newspaper3k
+      └── (2) fetch full article body via newspaper4k
               │  (falls back to snippet if fetch fails or returns empty)
               ▼
   save_clean_news(policy) → clean_news table
@@ -41,7 +44,7 @@ logger = logging.getLogger(__name__)
 # Date normalization
 # ---------------------------------------------------------------------------
 
-_RELATIVE_DATE_RE = re.compile(r"\d+[분시일주개월년]+\s*전")
+_RELATIVE_DATE_RE = re.compile(r"\d+\s*(분|시간|일|주|개월|년)\s*전")  # 11시간 전, 1일 전, 2주 전, 3개월 전, 1년 전
 _DOT_DATE_RE = re.compile(r"(\d{4})[.\-](\d{2})[.\-](\d{2})")
 
 
@@ -98,7 +101,7 @@ def _normalize_whitespace(text):
 # ---------------------------------------------------------------------------
 
 def _fetch_full_content(url):
-    """Download and parse the full article body using newspaper3k.
+    """Download and parse the full article body using newspaper4k.
 
     Returns the article text, or an empty string if the fetch fails
     (network error, paywall, bot-block, etc.).
@@ -109,7 +112,7 @@ def _fetch_full_content(url):
         article.parse()
         return article.text.strip()
     except ArticleException as e:
-        logger.warning(f"newspaper3k could not parse article at {url}: {e}")
+        logger.warning(f"newspaper4k could not parse article at {url}: {e}")
         return ""
     except Exception as e:
         logger.warning(f"Unexpected error fetching full content for {url}: {e}")
@@ -131,6 +134,8 @@ def _clean_record(raw):
     Returns a cleaned dict ready for save_clean_news(), or None if the
     record fails validation.
     """
+
+    # (1) Validate required fields (title, url)
     if not _validate(raw):
         logger.warning(
             f"Skipping raw record id={raw.get('id')} — "
@@ -140,7 +145,7 @@ def _clean_record(raw):
 
     url = raw["url"].strip()
 
-    # Fetch full article body; fall back to snippet when unavailable
+    # (2) Fetch full article body; fall back to snippet when unavailable
     logger.info(f"Fetching full content: {url}")
     content = _fetch_full_content(url)
     if not content:

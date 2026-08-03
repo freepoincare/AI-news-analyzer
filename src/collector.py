@@ -148,7 +148,7 @@ def get_news_via_rss(query_text, limit, category):
 
 def get_news_via_api(query_text, limit, category, date_from=None, date_to=None):
 
-    # only raising error when using API, because RSS and Crawler do not require API keys.
+    # only raising error when using API (thus, inside this fct), because RSS and Crawler do not require API keys.
     if not NEWS_API_KEY:
         raise EnvironmentError("NEWS_API_KEY environment variable is not set")
 
