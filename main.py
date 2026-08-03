@@ -10,7 +10,7 @@ from src.database import initialize_database
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     filename="app.log",
     encoding="utf-8"
 )
