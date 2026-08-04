@@ -1,5 +1,5 @@
 import argparse
-from .utils import CATEGORIES
+from .config import CATEGORIES
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="AI News Trend and Insight Analysis Report Generator")
