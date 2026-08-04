@@ -17,6 +17,8 @@ API_URL = CONFIG["news"]["sources"]["api"]["url"]
 CRAWLER_URL = CONFIG["news"]["sources"]["crawler"]["url"]
 LANGUAGE = CONFIG["news"]["language"]
 
+# AI model configuration
+GEMINI_MODEL = CONFIG["ai"]["model"]
 
 # API keys
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")

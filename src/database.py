@@ -11,6 +11,8 @@ database.py
     ├── save_raw_news()
     ├── get_raw_news()
     ├── save_clean_news()
+    ├── update_clean_status()
+    ├── save_insight()
     ├── get_clean_news()
     └── query_news()
 
@@ -80,6 +82,21 @@ def initialize_database():
 
                 summary TEXT,
                 status TEXT DEFAULT 'unsummarized'
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS insights (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                analyzed_at TEXT NOT NULL,
+                category TEXT,
+                date_from TEXT,
+                date_to TEXT,
+                article_count INTEGER,
+
+                result_text TEXT NOT NULL
             )
             """
         )
@@ -182,6 +199,60 @@ def save_clean_news(records, policy="skip"):
                 )
             )
         connection.commit()
+
+
+def update_clean_status(article_id, summary, status="summarized"):
+    """Update the summary text and status of a clean_news record after AI summarization.
+
+    Args:
+        article_id: The id of the clean_news row to update.
+        summary:    The AI-generated summary text.
+        status:     New status value; defaults to 'summarized'.
+    """
+    with get_connection() as connection:
+        connection.execute(
+            """
+            UPDATE clean_news
+            SET summary = ?, status = ?
+            WHERE id = ?
+            """,
+            (summary, status, article_id),
+        )
+        connection.commit()
+
+
+def save_insight(analyzed_at, article_count, result_text,
+                 category=None, date_from=None, date_to=None):
+    """Persist an AI insight-analysis result to the insights table.
+
+    Args:
+        analyzed_at:   ISO-format timestamp of when the analysis ran.
+        article_count: Number of articles that were analysed.
+        result_text:   The full AI-generated analysis text.
+        category:      Category filter used for this analysis (or None).
+        date_from:     Start of the date range filter (or None).
+        date_to:       End of the date range filter (or None).
+
+    Returns:
+        The row id of the newly inserted insight record.
+    """
+    with get_connection() as connection:
+        cursor = connection.execute(
+            """
+            INSERT INTO insights (
+                analyzed_at,
+                category,
+                date_from,
+                date_to,
+                article_count,
+                result_text
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (analyzed_at, category, date_from, date_to, article_count, result_text),
+        )
+        connection.commit()
+        return cursor.lastrowid
 
 
 def get_raw_news():

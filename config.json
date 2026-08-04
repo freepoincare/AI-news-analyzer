@@ -28,6 +28,6 @@
     },
 
     "ai": {
-        "model": "your-ai-model-name"
+        "model": "gemini-3.5-flash"
     }
 }

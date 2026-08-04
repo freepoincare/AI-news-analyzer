@@ -2,3 +2,4 @@ beautifulsoup4
 requests
 feedparser
 newspaper4k
+google-genai
