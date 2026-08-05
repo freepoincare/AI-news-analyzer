@@ -3,3 +3,5 @@ requests
 feedparser
 newspaper4k
 google-genai
+openpyxl
+matplotlib
