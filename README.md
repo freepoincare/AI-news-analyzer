@@ -88,3 +88,18 @@ SQLite database: raw_news table
     ```
 
 ## Gemini API
+
+
+# How to set up
+
+```bash
+# 1. Create a virtual environment named ".venv"
+python3 -m venv .venv
+
+# 2. Activate it
+.venv\Scripts\activate      # (Windows)
+source .venv/bin/activate   # (Mac/Linux)
+
+# 3. Install requirements
+pip install -r requirements.txt
+```

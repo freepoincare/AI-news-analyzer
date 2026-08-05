@@ -22,7 +22,17 @@ GEMINI_MODEL = CONFIG["ai"]["model"]
 
 # API keys
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+
+def validate_gemini_key():
+    """Validate that GEMINI_API_KEY is present and return it, or raise EnvironmentError."""
+    key = os.getenv("GEMINI_API_KEY")
+    if not key:
+        raise EnvironmentError(
+            "GEMINI_API_KEY environment variable is not set. "
+            "Please set it before running 'summarize' or 'analyze'."
+        )
+    return key
 
 
 # fixed category list for news articles; can be used in argparse choices

@@ -15,16 +15,10 @@ import logging
 from datetime import datetime, timezone
 from google import genai
 
-from .config import GEMINI_API_KEY, GEMINI_MODEL
+from .config import GEMINI_MODEL, validate_gemini_key
 from .database import get_clean_news, update_clean_status, save_insight
 
 logger = logging.getLogger(__name__)
-
-
-if not GEMINI_API_KEY:
-    raise EnvironmentError("GEMINI_API_KEY environment variable is not set")
-
-client = genai.Client(api_key=GEMINI_API_KEY)
 
 
 # ---------------------------------------------------------------------------
@@ -87,6 +81,7 @@ def summarize_news(args):
     logger.info(f"summarize: {total} record(s) queued for summarization.")
     print(f"[INFO] Summary target: {total} articles")
 
+    api_key = validate_gemini_key()
     success_count = 0
     fail_count = 0
 
@@ -108,6 +103,7 @@ def summarize_news(args):
         )
 
         try:
+            client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
                 model=GEMINI_MODEL,
                 contents=prompt,
@@ -192,6 +188,7 @@ def analyze_news(args):
     )
 
     try:
+        client = _get_client()
         response = client.models.generate_content(
             model=GEMINI_MODEL,
             contents=prompt,

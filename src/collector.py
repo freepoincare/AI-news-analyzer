@@ -14,19 +14,6 @@ collect_news()
                 │
                 ▼
        SQLite raw_news table
-
-## 뉴스 수집 및 저장
-
-- 외부 뉴스 API(또는 RSS)와 크롤링으로 뉴스 데이터를 수집하고, raw/clean 분리 저장이 동작한다.
-- 중복 뉴스는 설정에 따라 `skip` 또는 `upsert` 처리된다.
-
-* 다음 두 가지 방법을 모두 구현한다.
-
-  - 방법 1: 공개 뉴스 API 또는 RSS 피드 활용
-  - 방법 2: 뉴스 사이트 크롤링 (`BeautifulSoup` 또는 `Selenium` 활용)
-
-* HTTP 요청 시 타임아웃 설정과 오류 처리를 구현한다.
-* 수집된 원본 데이터는 수집 시각, 소스 정보, 수집 방법과 함께 raw 저장소에 저장된다.
 """
 
 import logging
