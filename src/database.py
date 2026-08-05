@@ -153,7 +153,7 @@ def save_raw_news(records):
                 )
             )
         connection.commit()
-#    logger.info(f"Saved {len(records)} raw news record(s) to database.")
+    logger.info(f"Saved {len(records)} raw news record(s) to database.")
 
 
 def save_clean_news(records, policy="skip"):
