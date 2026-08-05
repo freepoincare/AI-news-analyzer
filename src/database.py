@@ -19,10 +19,13 @@ database.py
 """
 
 import json
+import logging
 import sqlite3
 from pathlib import Path
 
 from .config import CONFIG
+
+logger = logging.getLogger(__name__)
 
 
 DATABASE_PATH = Path(CONFIG["database"]["path"])
@@ -38,7 +41,7 @@ def get_connection():
 
 def initialize_database():
     """Create database tables if they do not exist."""
-
+#    logger.debug(f"Initializing database at: {DATABASE_PATH}")
     with get_connection() as connection:
         connection.execute(
             """
@@ -101,6 +104,7 @@ def initialize_database():
             """
         )
         connection.commit()
+#    logger.info("Database tables initialized successfully.")
 
 
 def save_raw_news(records):
@@ -149,6 +153,7 @@ def save_raw_news(records):
                 )
             )
         connection.commit()
+#    logger.info(f"Saved {len(records)} raw news record(s) to database.")
 
 
 def save_clean_news(records, policy="skip"):
@@ -199,6 +204,7 @@ def save_clean_news(records, policy="skip"):
                 )
             )
         connection.commit()
+#    logger.info(f"Promoted {len(records)} clean news record(s) to database (policy='{policy}').")
 
 
 def update_clean_status(article_id, summary, status="summarized"):
@@ -219,6 +225,7 @@ def update_clean_status(article_id, summary, status="summarized"):
             (summary, status, article_id),
         )
         connection.commit()
+#    logger.debug(f"Updated article id={article_id} status to '{status}'.")
 
 
 def save_insight(analyzed_at, article_count, result_text,
@@ -252,7 +259,9 @@ def save_insight(analyzed_at, article_count, result_text,
             (analyzed_at, category, date_from, date_to, article_count, result_text),
         )
         connection.commit()
-        return cursor.lastrowid
+        insight_id = cursor.lastrowid
+#    logger.info(f"Saved AI insight record (id={insight_id}).")
+    return insight_id
 
 
 def get_raw_news():

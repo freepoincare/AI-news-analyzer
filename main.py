@@ -1,4 +1,5 @@
-import logging
+from src.logging_config import setup_logging
+from src.config import load_config
 from src.arg_parser import parse_arguments
 from src.collector import collect_news
 from src.cleaner import clean_news
@@ -8,23 +9,17 @@ from src.exporter import export_news
 from src.database import initialize_database
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    filename="app.log",
-    encoding="utf-8"
-)
-
-
 def list_news(args):
     print(f"Listing news articles with filters - Category: {args.category}, Date From: {args.date_from}, Date To: {args.date_to}, Keyword: {args.keyword}, Page: {args.page}, Page Size: {args.page_size}...")
+
 
 def show_news(args):
     print(f"Showing details for article with ID: {args.id}...")
 
 
-
 def main():
+    config = load_config() # Load config.json first
+    setup_logging(config)  # Configure logging once when the program starts
     initialize_database()
     args = parse_arguments()
 

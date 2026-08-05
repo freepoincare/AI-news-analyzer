@@ -229,12 +229,12 @@ def collect_news(args):
 
         save_raw_news(articles)
         logger.info(f"News collection completed: {len(articles)} articles collected and saved to raw storage.")
- 
+
     except requests.exceptions.Timeout:
         logger.warning(f"News request timed out: source={args.source}")
 
     except requests.exceptions.RequestException as e:
         logger.error(f"News request failed: source={args.source}, error={e}")
 
-    except Exception:
-        logger.exception(f"Unexpected error during news collection: source={args.source}")
+    except Exception as e:
+        logger.exception(f"Unexpected error during news collection: source={args.source}, error={e}")
