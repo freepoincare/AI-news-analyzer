@@ -35,13 +35,14 @@ def get_connection():
     """Create and return a SQLite database connection."""
     DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(DATABASE_PATH)     # creates the database file if it does not exist
-    connection.row_factory = sqlite3.Row
+    connection.row_factory = sqlite3.Row            # allow to access columns by name. row["title"] instead of row[1]
     return connection
 
 
 def initialize_database():
-    """Create database tables if they do not exist."""
+    """Create database tables if they do not exist. (like preparing an empty warehouse before storing products)"""
 #    logger.debug(f"Initializing database at: {DATABASE_PATH}")
+    # opens the database safely and when this block finishes, the connection is automatically closed.
     with get_connection() as connection:
         connection.execute(
             """
@@ -168,7 +169,7 @@ def save_clean_news(records, policy="skip"):
     if policy == "upsert":
         insert_sql = "INSERT OR REPLACE"
     else:  # default: skip
-        insert_sql = "INSERT OR IGNORE"
+        insert_sql = "INSERT OR IGNORE"    # if duplicate GUID exists, SQLite ignores it
 
     with get_connection() as connection:
         for record in records:
@@ -259,7 +260,7 @@ def save_insight(analyzed_at, article_count, result_text,
             (analyzed_at, category, date_from, date_to, article_count, result_text),
         )
         connection.commit()
-        insight_id = cursor.lastrowid
+        insight_id = cursor.lastrowid   # returns the ID of the newly inserted insight
 #    logger.info(f"Saved AI insight record (id={insight_id}).")
     return insight_id
 
@@ -269,8 +270,8 @@ def get_raw_news():
     with get_connection() as connection:
         rows = connection.execute(
             "SELECT * FROM raw_news ORDER BY id"
-        ).fetchall()
-        return [dict(row) for row in rows]
+        ).fetchall()        # get all rows
+        return [dict(row) for row in rows]      # converts sqlite3.Row into a normal Python dictionary
 
 
 def get_clean_news(*, article_id=None, status=None, category=None,
@@ -285,8 +286,8 @@ def get_clean_news(*, article_id=None, status=None, category=None,
         date_to:    Include records where published_at <= date_to (YYYY-MM-DD).
         limit:      Maximum number of records to return.
     """
-    conditions = []
-    params = []
+    conditions = []     # collect WHERE condition
+    params = []         # collect corresponding values using ? placeholder to avoid SQL injection
 
     if article_id is not None:
         conditions.append("id = ?")
