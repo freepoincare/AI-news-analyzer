@@ -303,3 +303,84 @@ def get_clean_news(*, article_id=None, status=None, category=None,
     with get_connection() as connection:
         rows = connection.execute(sql, params).fetchall()
         return [dict(row) for row in rows]
+
+
+# fetches the most recent AI analysis result
+def get_latest_insight():
+    """Return the most recently saved insight record as a dict, or None."""
+    with get_connection() as connection:
+        row = connection.execute(
+            "SELECT * FROM insights ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        return dict(row) if row else None
+
+
+# single-pass aggregation of all stats needed
+def get_report_stats():
+    """Return a dict of aggregated statistics used by the report and visualizer.
+
+    Keys returned
+    -------------
+    total_raw        : int   — total rows in raw_news
+    total_clean      : int   — total rows in clean_news
+    total_summarized : int   — clean_news rows with status='summarized'
+    total_missing_content : int — clean_news rows where content IS NULL or ''
+    category_counts  : list of (category, count) — clean_news grouped by category
+    daily_counts     : list of (date, count)      — clean_news grouped by published date
+    top_sources      : list of (source, count)    — Top-10 sources in clean_news
+    """
+    with get_connection() as connection:
+        total_raw = connection.execute(
+            "SELECT COUNT(*) FROM raw_news"
+        ).fetchone()[0]
+
+        total_clean = connection.execute(
+            "SELECT COUNT(*) FROM clean_news"
+        ).fetchone()[0]
+
+        total_summarized = connection.execute(
+            "SELECT COUNT(*) FROM clean_news WHERE status = 'summarized'"
+        ).fetchone()[0]
+
+        total_missing_content = connection.execute(
+            "SELECT COUNT(*) FROM clean_news WHERE content IS NULL OR content = ''"
+        ).fetchone()[0]
+
+        category_rows = connection.execute(
+            """
+            SELECT COALESCE(NULLIF(category,''), '(none)') AS cat, COUNT(*) AS cnt
+            FROM clean_news
+            GROUP BY cat
+            ORDER BY cnt DESC
+            """
+        ).fetchall()
+
+        daily_rows = connection.execute(
+            """
+            SELECT SUBSTR(published_at, 1, 10) AS day, COUNT(*) AS cnt
+            FROM clean_news
+            WHERE published_at IS NOT NULL AND published_at != ''
+            GROUP BY day
+            ORDER BY day ASC
+            """
+        ).fetchall()
+
+        source_rows = connection.execute(
+            """
+            SELECT COALESCE(NULLIF(source,''), '(unknown)') AS src, COUNT(*) AS cnt
+            FROM clean_news
+            GROUP BY src
+            ORDER BY cnt DESC
+            LIMIT 10
+            """
+        ).fetchall()
+
+    return {
+        "total_raw": total_raw,
+        "total_clean": total_clean,
+        "total_summarized": total_summarized,
+        "total_missing_content": total_missing_content,
+        "category_counts": [(r[0], r[1]) for r in category_rows],
+        "daily_counts": [(r[0], r[1]) for r in daily_rows],
+        "top_sources": [(r[0], r[1]) for r in source_rows],
+    }
