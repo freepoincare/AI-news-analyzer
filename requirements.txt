@@ -5,3 +5,4 @@ newspaper4k
 google-genai
 openpyxl
 matplotlib
+pydantic

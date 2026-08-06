@@ -51,4 +51,5 @@ CATEGORIES = [
     "sports",
     "technology",
     "travel",
+    "other",
 ]

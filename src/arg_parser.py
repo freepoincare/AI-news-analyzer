@@ -32,11 +32,14 @@ def parse_arguments():
     analyze_parser = subparsers.add_parser("analyze", help="Analyze news trends using AI")
     analyze_parser.add_argument("--date-from", type=validate_date, required=True, help="Start date of the articles (YYYY-MM-DD)")
     analyze_parser.add_argument("--date-to", type=validate_date, required=True, help="End date of the articles (YYYY-MM-DD)")
-    analyze_parser.add_argument("--category", type=str.lower, required=True, choices=CATEGORIES, help="News category")  # what categories are available? we can get them from the database or from the 'category' subcommand
+    analyze_parser.add_argument("--category", type=str.lower, required=True, choices=CATEGORIES, help="News category")
 
     # report
     report_parser = subparsers.add_parser("report", help="Generate a news analysis report")
     report_parser.add_argument("--format", type=str.lower, choices=["txt", "md"], default="md", help="Report output format (txt or md) (default: md)")
+    report_parser.add_argument("--date-from", type=validate_date, help="Start date of the articles (YYYY-MM-DD)")
+    report_parser.add_argument("--date-to", type=validate_date, help="End date of the articles (YYYY-MM-DD)")
+    report_parser.add_argument("--category", type=str.lower, choices=CATEGORIES, help="News category")
 
     # export
     export_parser = subparsers.add_parser("export", help="Export news data to a file")

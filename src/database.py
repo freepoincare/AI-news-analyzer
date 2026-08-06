@@ -339,72 +339,120 @@ def get_latest_insight():
 
 
 # single-pass aggregation of all stats needed
-def get_report_stats():
+def get_report_stats(category=None, date_from=None, date_to=None):
     """Return a dict of aggregated statistics used by the report and visualizer.
 
     Keys returned
     -------------
     total_raw        : int   — total rows in raw_news
-    total_clean      : int   — total rows in clean_news
-    total_summarized : int   — clean_news rows with status='summarized'
-    total_missing_content : int — clean_news rows where content IS NULL or ''
-    category_counts  : list of (category, count) — clean_news grouped by category
-    daily_counts     : list of (date, count)      — clean_news grouped by published date
-    top_sources      : list of (source, count)    — Top-10 sources in clean_news
+    total_clean      : int   — clean_news rows matching filters
+    total_summarized : int   — clean_news rows matching filters with status='summarized'
+    total_missing_content : int — clean_news rows matching filters where content IS NULL or ''
+    category_counts  : list of (category, count) — clean_news grouped by category matching filters
+    daily_counts     : list of (date, count)      — clean_news grouped by published date matching filters
+    top_sources      : list of (source, count)    — Top-10 sources in clean_news matching filters
     """
+    conditions = []
+    params = []
+
+    if category:
+        conditions.append("category = ?")
+        params.append(category)
+        raw_category_cond = "category = ?"
+    else:
+        raw_category_cond = None
+
+    if date_from:
+        conditions.append("published_at >= ?")
+        params.append(date_from)
+    if date_to:
+        conditions.append("published_at <= ?")
+        params.append(date_to)
+
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+    # Build WHERE clause for raw_news (using published_at or created_at if needed, but here raw_news has published_at and category)
+    raw_conditions = []
+    raw_params = []
+    if category:
+        raw_conditions.append("category = ?")
+        raw_params.append(category)
+        
+    if date_from:
+        raw_conditions.append("published_at >= ?")
+        raw_params.append(date_from)
+    if date_to:
+        raw_conditions.append("published_at <= ?")
+        raw_params.append(date_to)
+
+    raw_where_clause = f"WHERE {' AND '.join(raw_conditions)}" if raw_conditions else ""
+
     with get_connection() as connection:
         total_raw = connection.execute(
-            "SELECT COUNT(*) FROM raw_news"
+            f"SELECT COUNT(*) FROM raw_news {raw_where_clause}", raw_params
         ).fetchone()[0]
 
         total_clean = connection.execute(
-            "SELECT COUNT(*) FROM clean_news"
+            f"SELECT COUNT(*) FROM clean_news {where_clause}", params
         ).fetchone()[0]
 
+        sum_conds = list(conditions) + ["status = 'summarized'"]
+        sum_where = f"WHERE {' AND '.join(sum_conds)}"
         total_summarized = connection.execute(
-            "SELECT COUNT(*) FROM clean_news WHERE status = 'summarized'"
+            f"SELECT COUNT(*) FROM clean_news {sum_where}", params
         ).fetchone()[0]
 
+        missing_conds = list(conditions) + ["(content IS NULL OR content = '')"]
+        missing_where = f"WHERE {' AND '.join(missing_conds)}"
         total_missing_content = connection.execute(
-            "SELECT COUNT(*) FROM clean_news WHERE content IS NULL OR content = ''"
+            f"SELECT COUNT(*) FROM clean_news {missing_where}", params
         ).fetchone()[0]
 
         category_rows = connection.execute(
-            """
+            f"""
             SELECT COALESCE(NULLIF(category,''), '(none)') AS cat, COUNT(*) AS cnt
             FROM clean_news
+            {where_clause}
             GROUP BY cat
             ORDER BY cnt DESC
-            """
+            """,
+            params
         ).fetchall()
 
+        daily_conds = list(conditions) + ["published_at IS NOT NULL", "published_at != ''"]
+        daily_where = f"WHERE {' AND '.join(daily_conds)}"
         daily_rows = connection.execute(
-            """
+            f"""
             SELECT SUBSTR(published_at, 1, 10) AS day, COUNT(*) AS cnt
             FROM clean_news
-            WHERE published_at IS NOT NULL AND published_at != ''
+            {daily_where}
             GROUP BY day
             ORDER BY day ASC
-            """
+            """,
+            params
         ).fetchall()
 
         source_rows = connection.execute(
-            """
+            f"""
             SELECT COALESCE(NULLIF(source,''), '(unknown)') AS src, COUNT(*) AS cnt
             FROM clean_news
+            {where_clause}
             GROUP BY src
             ORDER BY cnt DESC
             LIMIT 10
-            """
+            """,
+            params
         ).fetchall()
 
         sentiment_rows = connection.execute(
-            """
+            f"""
             SELECT COALESCE(NULLIF(sentiment,''), '(none)') AS sent, COUNT(*) AS cnt
             FROM clean_news
+            {where_clause}
             GROUP BY sent
             ORDER BY cnt DESC
-            """
+            """,
+            params
         ).fetchall()
 
     return {

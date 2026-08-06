@@ -64,15 +64,30 @@ def _top_sources_block(stats, n=5):
 
 
 # Plain-text report assembly
-def _build_report_lines(stats, chart_paths, insight):
+def _build_report_lines(stats, chart_paths, insight, category=None, date_from=None, date_to=None):
     """Assemble the full report as a list of plain-text lines."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = []
+
+    # Period display
+    if date_from and date_to:
+        period_str = f"{date_from} ~ {date_to}"
+    elif date_from:
+        period_str = f"From {date_from}"
+    elif date_to:
+        period_str = f"Until {date_to}"
+    else:
+        period_str = "All available data"
+
+    # Category display
+    category_str = category.capitalize() if category else "All categories"
 
     lines += [
         "=" * 60,
         "  AI NEWS ANALYZER — ANALYSIS REPORT",
         f"  Generated: {now}",
+        f"  Period: {period_str}",
+        f"  Category: {category_str}",
         "=" * 60,
         "",
     ]
@@ -139,14 +154,29 @@ def _build_report_lines(stats, chart_paths, insight):
 
 
 # Markdown report assembly with tables and image embeds
-def _build_markdown_lines(stats, chart_paths, insight):
+def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=None, date_to=None):
     """Assemble the full report as markdown lines."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = []
 
+    # Period display
+    if date_from and date_to:
+        period_str = f"{date_from} ~ {date_to}"
+    elif date_from:
+        period_str = f"From {date_from}"
+    elif date_to:
+        period_str = f"Until {date_to}"
+    else:
+        period_str = "All available data"
+
+    # Category display
+    category_str = category.capitalize() if category else "All categories"
+
     lines += [
         "# AI News Analyzer — Analysis Report",
         "",
+        f"Period: {period_str}",
+        f"Category: {category_str}",
         f"**Generated:** {now}",
         "",
         "---",
@@ -256,18 +286,24 @@ def generate_report(args):
     [collects stats] → [generates charts] → [loads AI insight] → [prints + saves file]
     Args:
         args.format: 'txt' or 'md' (default 'md').
+        args.category: Optional category filter string.
+        args.date_from: Optional start date filter (YYYY-MM-DD).
+        args.date_to: Optional end date filter (YYYY-MM-DD).
     """
     fmt = getattr(args, "format", "md")
+    category = getattr(args, "category", None)
+    date_from = getattr(args, "date_from", None)
+    date_to = getattr(args, "date_to", None)
 
     print("[INFO] Collecting statistics...")
-    stats = get_report_stats()
+    stats = get_report_stats(category=category, date_from=date_from, date_to=date_to)
 
     if stats["total_clean"] == 0:
         print(
-            "[ERROR] No clean data found. "
-            "Please run 'python main.py clean' before generating a report."
+            "[ERROR] No clean data found matching the specified filters. "
+            "Please run 'python main.py clean' or adjust your filter parameters."
         )
-        logger.error("report aborted: clean_news table is empty.")
+        logger.error("report aborted: clean_news table has no matching data for filters.")
         return
 
     print("[INFO] Generating charts...")
@@ -285,10 +321,10 @@ def generate_report(args):
 
     # --- Build report content ---
     if fmt == "md":
-        lines = _build_markdown_lines(stats, chart_paths, insight)
+        lines = _build_markdown_lines(stats, chart_paths, insight, category=category, date_from=date_from, date_to=date_to)
         ext = "md"
     else:
-        lines = _build_report_lines(stats, chart_paths, insight)
+        lines = _build_report_lines(stats, chart_paths, insight, category=category, date_from=date_from, date_to=date_to)
         ext = "txt"
 
     report_text = "\n".join(lines)
@@ -304,3 +340,4 @@ def generate_report(args):
 
     print(f"\n[INFO] Report saved: {out_path}")
     logger.info(f"report: saved to {out_path} (format={fmt})")
+
