@@ -19,12 +19,13 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .database import get_report_stats, get_latest_insight
+from .database import get_report_stats, get_latest_insight, get_sentiment_stats
 from .visualizer import generate_charts
 
 logger = logging.getLogger(__name__)
 
 REPORTS_DIR = Path("output") / "reports"
+
 
 
 # ---------------------------------------------------------------------------
@@ -124,13 +125,21 @@ def _build_report_lines(stats, chart_paths, insight, category=None, date_from=No
     # --- Chart references ---
     lines.append("[ CHARTS ]")
     if chart_paths.get("category_chart"):
-        lines.append(f"  Category distribution : {chart_paths['category_chart']}")
+        lines.append(f"  Category distribution     : {chart_paths['category_chart']}")
     else:
-        lines.append("  Category distribution : (not generated — no data)")
+        lines.append("  Category distribution     : (not generated — no data)")
     if chart_paths.get("daily_chart"):
-        lines.append(f"  Daily trend           : {chart_paths['daily_chart']}")
+        lines.append(f"  Daily trend               : {chart_paths['daily_chart']}")
     else:
-        lines.append("  Daily trend           : (not generated — no data)")
+        lines.append("  Daily trend               : (not generated — no data)")
+    if chart_paths.get("sentiment_over_time_chart"):
+        lines.append(f"  Sentiment over time       : {chart_paths['sentiment_over_time_chart']}")
+    else:
+        lines.append("  Sentiment over time       : (not generated — no data)")
+    if chart_paths.get("sentiment_by_category_chart"):
+        lines.append(f"  Sentiment by category     : {chart_paths['sentiment_by_category_chart']}")
+    else:
+        lines.append("  Sentiment by category     : (not generated — filtered or no data)")
     lines.append("")
 
     # --- AI Insight (§4.7: AI insight result) ---
@@ -255,6 +264,18 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     else:
         lines.append("_Daily trend chart not generated (no data)._")
     lines.append("")
+    if chart_paths.get("sentiment_over_time_chart"):
+        rel = Path(chart_paths["sentiment_over_time_chart"])
+        lines.append(f"![Sentiment Over Time]({rel})")
+    else:
+        lines.append("_Sentiment over time chart not generated (no data)._")
+    lines.append("")
+    if chart_paths.get("sentiment_by_category_chart"):
+        rel = Path(chart_paths["sentiment_by_category_chart"])
+        lines.append(f"![Sentiment By Category]({rel})")
+    elif not category:
+        lines.append("_Sentiment by category chart not generated (no data)._")
+    lines.append("")
 
     # --- AI Insight ---
     lines += ["## AI Insight Analysis", ""]
@@ -306,13 +327,21 @@ def generate_report(args):
         logger.error("report aborted: clean_news table has no matching data for filters.")
         return
 
+    # Collect sentiment stats
+    sentiment_stats = get_sentiment_stats(category=category, date_from=date_from, date_to=date_to)
+    stats.update(sentiment_stats)
+
     print("[INFO] Generating charts...")
-    chart_paths = generate_charts(stats)
+    chart_paths = generate_charts(stats, category=category)
 
     if chart_paths["category_chart"]:
         print(f"[INFO] Category chart saved: {chart_paths['category_chart']}")
     if chart_paths["daily_chart"]:
         print(f"[INFO] Daily trend chart saved: {chart_paths['daily_chart']}")
+    if chart_paths.get("sentiment_over_time_chart"):
+        print(f"[INFO] Sentiment over time chart saved: {chart_paths['sentiment_over_time_chart']}")
+    if chart_paths.get("sentiment_by_category_chart"):
+        print(f"[INFO] Sentiment by category chart saved: {chart_paths['sentiment_by_category_chart']}")
 
     print("[INFO] Loading latest AI insight...")
     insight = get_latest_insight()
@@ -340,4 +369,5 @@ def generate_report(args):
 
     print(f"\n[INFO] Report saved: {out_path}")
     logger.info(f"report: saved to {out_path} (format={fmt})")
+
 

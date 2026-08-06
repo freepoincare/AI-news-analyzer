@@ -465,3 +465,95 @@ def get_report_stats(category=None, date_from=None, date_to=None):
         "top_sources": [(r[0], r[1]) for r in source_rows],
         "sentiment_counts": [(r[0], r[1]) for r in sentiment_rows],
     }
+
+
+def get_sentiment_stats(category=None, date_from=None, date_to=None):
+    """Return aggregated sentiment statistics for visualization.
+
+    Returns:
+        dict containing:
+            - sentiment_over_time: list of dicts with 'date' and counts for 'positive', 'neutral', 'negative', 'none' (or unclassified)
+            - sentiment_by_category: list of dicts with 'category' and counts for 'positive', 'neutral', 'negative', 'none'
+    """
+    conditions = []
+    params = []
+
+    if category:
+        conditions.append("category = ?")
+        params.append(category)
+    if date_from:
+        conditions.append("published_at >= ?")
+        params.append(date_from)
+    if date_to:
+        conditions.append("published_at <= ?")
+        params.append(date_to)
+
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+    time_conds = list(conditions) + ["published_at IS NOT NULL", "published_at != ''"]
+    time_where = f"WHERE {' AND '.join(time_conds)}"
+
+    with get_connection() as connection:
+        # Sentiment over time grouped by date (SUBSTR(published_at, 1, 10))
+        time_rows = connection.execute(
+            f"""
+            SELECT SUBSTR(published_at, 1, 10) AS day,
+                   LOWER(COALESCE(NULLIF(sentiment, ''), 'none')) AS sent,
+                   COUNT(*) AS cnt
+            FROM clean_news
+            {time_where}
+            GROUP BY day, sent
+            ORDER BY day ASC
+            """,
+            params
+        ).fetchall()
+
+        # Sentiment by category grouped by category
+        cat_rows = connection.execute(
+            f"""
+            SELECT COALESCE(NULLIF(category, ''), '(none)') AS cat,
+                   LOWER(COALESCE(NULLIF(sentiment, ''), 'none')) AS sent,
+                   COUNT(*) AS cnt
+            FROM clean_news
+            {where_clause}
+            GROUP BY cat, sent
+            ORDER BY cat ASC
+            """,
+            params
+        ).fetchall()
+
+    # Structure sentiment_over_time
+    # { date: { 'positive': int, 'neutral': int, 'negative': int, 'none': int } }
+    time_dict = {}
+    for r in time_rows:
+        day, sent, cnt = r[0], r[1], r[2]
+        if day not in time_dict:
+            time_dict[day] = {"positive": 0, "neutral": 0, "negative": 0, "none": 0}
+        if sent in time_dict[day]:
+            time_dict[day][sent] += cnt
+        else:
+            time_dict[day]["none"] += cnt
+
+    sentiment_over_time = [
+        {"date": day, **counts} for day, counts in time_dict.items()
+    ]
+
+    # Structure sentiment_by_category
+    cat_dict = {}
+    for r in cat_rows:
+        cat, sent, cnt = r[0], r[1], r[2]
+        if cat not in cat_dict:
+            cat_dict[cat] = {"positive": 0, "neutral": 0, "negative": 0, "none": 0}
+        if sent in cat_dict[cat]:
+            cat_dict[cat][sent] += cnt
+        else:
+            cat_dict[cat]["none"] += cnt
+
+    sentiment_by_category = [
+        {"category": cat, **counts} for cat, counts in cat_dict.items()
+    ]
+
+    return {
+        "sentiment_over_time": sentiment_over_time,
+        "sentiment_by_category": sentiment_by_category,
+    }
