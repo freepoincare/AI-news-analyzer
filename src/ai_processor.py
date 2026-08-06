@@ -141,8 +141,8 @@ def summarize_news(args):
         records = get_clean_news(article_id=args.id)
     elif args.unsummarized:
         records = get_clean_news(status="unsummarized", limit=args.limit)
-    else:  # --all
-        records = get_clean_news(limit=args.limit)
+    else:  # (--all); default: skip already-summarized articles; keeping this else branch for clarity
+        records = get_clean_news(status="unsummarized", limit=args.limit)
 
     # --- pipeline guard: refuse to proceed without clean data ---
     if not _require_clean_data(records, "summarize"):
@@ -159,6 +159,11 @@ def summarize_news(args):
         article_id = record["id"]
         title = record["title"]
         text = record["content"] if record["content"] else record["snippet"]
+
+        # --- skip already-summarized articles (e.g.: for summarize --id option) ---
+        if record.get("status") == "summarized":
+            logger.info(f"[{i}/{total}] ID={article_id} already summarized, skipping.")
+            continue
 
         if not text:
             logger.warning(f"[{i}/{total}] ID={article_id} no content, skipping.")
