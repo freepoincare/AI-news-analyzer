@@ -41,6 +41,7 @@ EXPORT_COLUMNS = [
     "snippet",
     "content",
     "summary",
+    "sentiment",
     "method",
     "query",
     "collected_at",

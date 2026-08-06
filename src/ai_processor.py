@@ -7,19 +7,90 @@ Pipeline contract (enforced here):
   Users must run 'python main.py clean' before these commands.
 
 Functions:
-    summarize_news(args) — send clean article content to AI and save summary
+    summarize_news(args) — send clean article content to AI and save summary and sentiment analysis
     analyze_news(args)   — batch-analyze clean articles and return trend insights
 """
 
+import json
 import logging
 from datetime import datetime, timezone
 from google import genai
+from enum import Enum
+from pydantic import BaseModel
 
 from .config import GEMINI_MODEL, validate_gemini_key
 from .database import get_clean_news, update_clean_status, save_insight
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Constants & data models
+# ---------------------------------------------------------------------------
+
+ENFORCEMENT_PROMPT = (
+    "\n\n[IMPORTANT] Your previous response was invalid. "
+    "You MUST return ONLY valid JSON (no markdown, no code fences, no extra text). "
+    "The JSON object must contain exactly two keys: "
+    "\"summary\" (a string with a 3-5 sentence summary) and "
+    "\"sentiment\" (a string that is exactly one of: \"positive\", \"neutral\", \"negative\"). "
+    "Example: {\"summary\": \"...\", \"sentiment\": \"neutral\"}"
+)
+
+class Sentiment(str, Enum):
+    positive = "positive"
+    neutral = "neutral"
+    negative = "negative"
+
+    @classmethod
+    def values(cls) -> set[str]:
+        """Return a set of all valid sentiment string values."""
+        return {member.value for member in cls}
+
+class SummaryResult(BaseModel):
+    summary: str
+    sentiment: Sentiment
+
+# ---------------------------------------------------------------------------
+# Response validation
+# ---------------------------------------------------------------------------
+
+def _validate_ai_response(raw_text):
+    """Validate the AI response and return (summary, sentiment) or raise ValueError.
+
+    Checks performed:
+        1. The output is valid JSON.
+        2. It contains 'summary' and 'sentiment' keys with string values.
+        3. The sentiment value is one of VALID_SENTIMENTS.
+
+    Returns:
+        A tuple (summary_str, sentiment_str) on success.
+
+    Raises:
+        ValueError with a descriptive message on any validation failure.
+    """
+    # (1) Check valid JSON
+    try:
+        data = json.loads(raw_text)
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise ValueError(f"Response is not valid JSON: {exc}")
+
+    # (2) Check required keys exist and values are strings
+    for key in ("summary", "sentiment"):
+        if key not in data:
+            raise ValueError(f"JSON is missing required key '{key}'")
+        if not isinstance(data[key], str):
+            raise ValueError(
+                f"Value of '{key}' must be a string, got {type(data[key]).__name__}"
+            )
+
+    # (3) Check sentiment value is in VALID_SENTIMENTS
+    if data["sentiment"] not in Sentiment.values():
+        raise ValueError(
+            f"Invalid sentiment '{data['sentiment']}'; "
+            f"must be one of {Sentiment.values()}"
+        )
+
+    return data["summary"], data["sentiment"]
 
 # ---------------------------------------------------------------------------
 # Pipeline guard
@@ -56,14 +127,14 @@ def _require_clean_data(records, command_name):
 def summarize_news(args):
     """Entry point for 'python main.py summarize'.
 
-    Reads only from clean_news. Aborts with a clear message if clean_news
-    is empty (i.e. 'python main.py clean' has not been run yet).
+    Reads only from clean_news. Aborts with a message if clean_news is empty
+    (i.e. 'python main.py clean' has not been run yet).
 
-    Per §4.4:
-      - Supports --all, --id, --unsummarized selection options.
+      - Supports --all, --id, --unsummarized selection options
+      - Supports --limit for batch processing.
       - Already-summarized articles are skipped by default (via status filter).
       - On API failure: logs the error and skips the article.
-      - On success: saves the summary and flips status to 'summarized'.
+      - On success: saves the summary + sentiment and flips status to 'summarized'.
     """
     # --- resolve which records to process ---
     if args.id:
@@ -79,7 +150,6 @@ def summarize_news(args):
 
     total = len(records)
     logger.info(f"summarize: {total} record(s) queued for summarization.")
-    print(f"[INFO] Summary target: {total} articles")
 
     api_key = validate_gemini_key()
     success_count = 0
@@ -96,10 +166,26 @@ def summarize_news(args):
             continue
 
         prompt = (
-            "Please, summarize the following news article in 3~5 sentences. "
-            "Include only the key facts and provide the summary without additional comments.\n\n"
-            f"Title: {title}\n\n"
-            f"Content:\n{text}"
+            "Please analyze the following news article (available at the end)."
+            "Return ONLY valid JSON."
+            "Do not include markdown, explanations, or code fences."
+            "The JSON must have exactly this structure:"
+            "{"
+            "  \"summary\": \"3-5 sentence summary\","
+            "  \"sentiment\": \"positive | neutral | negative\""
+            "}"
+            "Instructions:"
+            "  - The summary should be 3-5 concise sentences."
+            "  - Include only the key facts."
+            "  - The sentiment must be exactly one of:"
+            "    \"positive\", \"neutral\", or \"negative\"."
+            "\n---\n"
+            "Article:\n"
+            "Title:\n"
+            f"{title}\n"
+            "Content:\n"
+            f"{text}\n"
+            "\n---\n"
         )
 
         try:
@@ -107,16 +193,51 @@ def summarize_news(args):
             response = client.models.generate_content(
                 model=GEMINI_MODEL,
                 contents=prompt,
+                config={
+                    "response_mime_type": "application/json",
+                    "response_schema": SummaryResult,
+                },
             )
-            summary = response.text.strip()
-            update_clean_status(article_id, summary, status="summarized")
+            raw_text = response.text.strip()
+
+            # --- validate response; retry once on failure ---
+            try:
+                summary_text, sentiment_value = _validate_ai_response(raw_text)
+            except ValueError as ve:
+                logger.warning(
+                    f"[{i}/{total}] ID={article_id} first response invalid ({ve}), retrying..."
+                )
+                retry_prompt = prompt + ENFORCEMENT_PROMPT
+                response = client.models.generate_content(
+                    model=GEMINI_MODEL,
+                    contents=retry_prompt,
+                    config={
+                        "response_mime_type": "application/json",
+                        "response_schema": SummaryResult,
+                    },
+                )
+                raw_text = response.text.strip()
+                # validate again — let ValueError propagate to outer except on second failure
+                summary_text, sentiment_value = _validate_ai_response(raw_text)
+
+            update_clean_status(
+                article_id,
+                summary_text,
+                status="summarized",
+                sentiment=sentiment_value,
+            )
 
             original_len = len(text)
-            summary_len = len(summary)
-            print(f"[INFO] [{i}/{total}] ID={article_id} summary completed ({original_len} chars → {summary_len} chars)")
+            summary_len = len(summary_text)
+            print(
+                f"[INFO] [{i}/{total}] ID={article_id} summary completed "
+                f"({original_len} chars → {summary_len} chars), "
+                f"sentiment={sentiment_value}"
+            )
             logger.info(
                 f"[{i}/{total}] ID={article_id} summarized "
-                f"({original_len} chars → {summary_len} chars): {title[:60]}"
+                f"({original_len} chars → {summary_len} chars), "
+                f"sentiment={sentiment_value}: {title[:60]}"
             )
             success_count += 1
 

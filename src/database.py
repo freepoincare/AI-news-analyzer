@@ -85,6 +85,7 @@ def initialize_database():
                 collected_at TEXT,
 
                 summary TEXT,
+                sentiment TEXT,
                 status TEXT DEFAULT 'unsummarized'
             )
             """
@@ -105,6 +106,17 @@ def initialize_database():
             """
         )
         connection.commit()
+
+        # Todo: check why this is needed.
+        # --- migrate: add sentiment column if missing (for existing DBs) ---
+        cols = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(clean_news)").fetchall()
+        }
+        if "sentiment" not in cols:
+            connection.execute("ALTER TABLE clean_news ADD COLUMN sentiment TEXT")
+            connection.commit()
+            logger.info("Migration: added 'sentiment' column to clean_news.")
 #    logger.info("Database tables initialized successfully.")
 
 
@@ -208,25 +220,26 @@ def save_clean_news(records, policy="skip"):
 #    logger.info(f"Promoted {len(records)} clean news record(s) to database (policy='{policy}').")
 
 
-def update_clean_status(article_id, summary, status="summarized"):
-    """Update the summary text and status of a clean_news record after AI summarization.
+def update_clean_status(article_id, summary, status="summarized", sentiment=None):
+    """Update the summary text, sentiment, and status of a clean_news record after AI summarization.
 
     Args:
         article_id: The id of the clean_news row to update.
         summary:    The AI-generated summary text.
         status:     New status value; defaults to 'summarized'.
+        sentiment:  Sentiment classification ('positive', 'neutral', or 'negative').
     """
     with get_connection() as connection:
         connection.execute(
             """
             UPDATE clean_news
-            SET summary = ?, status = ?
+            SET summary = ?, sentiment = ?, status = ?
             WHERE id = ?
             """,
-            (summary, status, article_id),
+            (summary, sentiment, status, article_id),
         )
         connection.commit()
-#    logger.debug(f"Updated article id={article_id} status to '{status}'.")
+#    logger.debug(f"Updated article id={article_id} status to '{status}', sentiment='{sentiment}'.")
 
 
 def save_insight(analyzed_at, article_count, result_text,
@@ -385,6 +398,15 @@ def get_report_stats():
             """
         ).fetchall()
 
+        sentiment_rows = connection.execute(
+            """
+            SELECT COALESCE(NULLIF(sentiment,''), '(none)') AS sent, COUNT(*) AS cnt
+            FROM clean_news
+            GROUP BY sent
+            ORDER BY cnt DESC
+            """
+        ).fetchall()
+
     return {
         "total_raw": total_raw,
         "total_clean": total_clean,
@@ -393,4 +415,5 @@ def get_report_stats():
         "category_counts": [(r[0], r[1]) for r in category_rows],
         "daily_counts": [(r[0], r[1]) for r in daily_rows],
         "top_sources": [(r[0], r[1]) for r in source_rows],
+        "sentiment_counts": [(r[0], r[1]) for r in sentiment_rows],
     }

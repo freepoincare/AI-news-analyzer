@@ -99,6 +99,13 @@ def _build_report_lines(stats, chart_paths, insight):
             lines.append(f"  {cat:<20} {cnt} articles")
         lines.append("")
 
+    # --- Sentiment Distribution ---
+    if stats.get("sentiment_counts"):
+        lines.append("[ SENTIMENT DISTRIBUTION ]")
+        for sent, cnt in stats["sentiment_counts"]:
+            lines.append(f"  {sent:<20} {cnt} articles")
+        lines.append("")
+
     # --- Chart references ---
     lines.append("[ CHARTS ]")
     if chart_paths.get("category_chart"):
@@ -193,6 +200,15 @@ def _build_markdown_lines(stats, chart_paths, insight):
         lines.append("|----------|----------|")
         for cat, cnt in stats["category_counts"]:
             lines.append(f"| {cat} | {cnt} |")
+        lines.append("")
+
+    # --- Sentiment Distribution ---
+    if stats.get("sentiment_counts"):
+        lines += ["## Sentiment Distribution", ""]
+        lines.append("| Sentiment | Articles |")
+        lines.append("|-----------|----------|")
+        for sent, cnt in stats["sentiment_counts"]:
+            lines.append(f"| {sent} | {cnt} |")
         lines.append("")
 
     # --- Charts ---
