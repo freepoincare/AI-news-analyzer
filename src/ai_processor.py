@@ -285,8 +285,7 @@ def analyze_news(args):
 
     total = len(records)
     logger.info(f"analyze: {total} record(s) queued for analysis.")
-    print(f"[INFO] Analysis target: {total} articles")
-    print("[INFO] Requesting AI analysis...")
+    logger.info("Requesting AI analysis...")
 
     # --- build combined article text for the prompt ---
     article_blocks = []
@@ -304,7 +303,7 @@ def analyze_news(args):
 
     prompt = (
         "The following is a list of news articles. Please provide a comprehensive insight analysis based on the four items below.\n\n"
-        "1. [Key Trends] — Describe 2~4 key trends commonly appearing in the articles\n"
+        "1. [Key Trends] — Describe 2~4 key trends appearing in the articles\n"
         "2. [Core Keywords] — List frequently appearing or important keywords, separated by commas (5~10 items)\n"
         "3. [Commonalities / Differences] — Briefly compare the main commonalities and differences among the articles\n"
         "4. [Implications] — Describe the implications of these articles in 2~3 sentences\n\n"
@@ -325,10 +324,9 @@ def analyze_news(args):
 
     except Exception as exc:
         logger.error(f"analyze: Gemini API call failed: {exc}")
-        print(f"[ERROR] AI analysis failed: {exc}")
         return
 
-    print("[INFO] Analysis completed\n")
+    logger.info("Analysis completed.")
 
     # --- console output ---
     print("=" * 40)

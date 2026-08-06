@@ -316,37 +316,34 @@ def generate_report(args):
     date_from = getattr(args, "date_from", None)
     date_to = getattr(args, "date_to", None)
 
-    print("[INFO] Collecting statistics...")
+    logger.info("Collecting statistics...")
     stats = get_report_stats(category=category, date_from=date_from, date_to=date_to)
 
     if stats["total_clean"] == 0:
-        print(
-            "[ERROR] No clean data found matching the specified filters. "
-            "Please run 'python main.py clean' or adjust your filter parameters."
-        )
-        logger.error("report aborted: clean_news table has no matching data for filters.")
+        logger.error("No clean data found matching the specified filters. "
+                     "Please run 'python main.py clean' or adjust your filter parameters.")
         return
 
     # Collect sentiment stats
     sentiment_stats = get_sentiment_stats(category=category, date_from=date_from, date_to=date_to)
     stats.update(sentiment_stats)
 
-    print("[INFO] Generating charts...")
+    logger.info("Generating charts...")
     chart_paths = generate_charts(stats, category=category)
 
     if chart_paths["category_chart"]:
-        print(f"[INFO] Category chart saved: {chart_paths['category_chart']}")
+        logger.info(f"Category chart saved: {chart_paths['category_chart']}")
     if chart_paths["daily_chart"]:
-        print(f"[INFO] Daily trend chart saved: {chart_paths['daily_chart']}")
+        logger.info(f"Daily trend chart saved: {chart_paths['daily_chart']}")
     if chart_paths.get("sentiment_over_time_chart"):
-        print(f"[INFO] Sentiment over time chart saved: {chart_paths['sentiment_over_time_chart']}")
+        logger.info(f"Sentiment over time chart saved: {chart_paths['sentiment_over_time_chart']}")
     if chart_paths.get("sentiment_by_category_chart"):
-        print(f"[INFO] Sentiment by category chart saved: {chart_paths['sentiment_by_category_chart']}")
+        logger.info(f"Sentiment by category chart saved: {chart_paths['sentiment_by_category_chart']}")
 
-    print("[INFO] Loading latest AI insight...")
+    logger.info("Loading latest AI insight...")
     insight = get_latest_insight()
     if not insight:
-        print("[WARNING] No AI insight found. Run 'python main.py analyze' first.")
+        logger.warning("No AI insight found. Run 'python main.py analyze' first.")
 
     # --- Build report content ---
     if fmt == "md":
@@ -359,7 +356,7 @@ def generate_report(args):
     report_text = "\n".join(lines)
 
     # --- Console output ---
-    print("\n" + report_text)
+    logger.info("\n" + report_text)
 
     # --- Save to file ---
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -367,7 +364,6 @@ def generate_report(args):
     out_path = REPORTS_DIR / f"report_{timestamp}.{ext}"
     out_path.write_text(report_text, encoding="utf-8")
 
-    print(f"\n[INFO] Report saved: {out_path}")
     logger.info(f"report: saved to {out_path} (format={fmt})")
 
 

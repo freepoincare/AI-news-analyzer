@@ -274,7 +274,6 @@ def save_insight(analyzed_at, article_count, result_text,
         )
         connection.commit()
         insight_id = cursor.lastrowid   # returns the ID of the newly inserted insight
-#    logger.info(f"Saved AI insight record (id={insight_id}).")
     return insight_id
 
 
@@ -348,7 +347,7 @@ def get_report_stats(category=None, date_from=None, date_to=None):
     total_clean      : int   — clean_news rows matching filters
     total_summarized : int   — clean_news rows matching filters with status='summarized'
     total_missing_content : int — clean_news rows matching filters where content IS NULL or ''
-    category_counts  : list of (category, count) — clean_news grouped by category matching filters
+    category_counts  : list of (category, count)  — clean_news grouped by category matching filters
     daily_counts     : list of (date, count)      — clean_news grouped by published date matching filters
     top_sources      : list of (source, count)    — Top-10 sources in clean_news matching filters
     """
