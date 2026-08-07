@@ -46,7 +46,7 @@ def parse_arguments():
     export_parser.add_argument("--format", type=str.lower, choices=["csv", "jsonl", "xlsx"], required=True, help="Export file format (csv, jsonl, or xlsx)")
     export_parser.add_argument("--status", type=str.lower, choices=["all", "summarized", "unsummarized"], default="all", help="Filter news by summary status")
 
-    # list (bonus): Show a list of news articles with filtering options
+    # list: Show a list of news articles with filtering options
     list_parser = subparsers.add_parser("list", help="Show a list of news articles")
     list_parser.add_argument("--category", type=str.lower, choices=CATEGORIES, help="Filter articles by category")
     list_parser.add_argument("--date-from", type=validate_date, help="Filter articles from this date (YYYY-MM-DD)")
@@ -55,7 +55,7 @@ def parse_arguments():
     list_parser.add_argument("--page", type=int, default=1, help="Page number to display (default: 1)")
     list_parser.add_argument("--page-size", type=int, default=10, help="Number of articles per page (default: 10)")
 
-    # show (bonus): Show details of a specific news article by its ID
+    # show: Show details of a specific news article by its ID
     show_parser = subparsers.add_parser("show", help="Show details of a news article")
     show_parser.add_argument("--id", type=int, required=True, help="ID of the article to display")
 

@@ -38,7 +38,7 @@ An automated, CLI-driven data pipeline that collects news from multiple sources,
 - 📈 **Automated Data Visualization**: Generates Category Distribution bar charts and Daily Collection Trend line charts.
 - 📄 **Multi-Format Reporting**: Produces formatted Markdown (`.md`) and Text (`.txt`) summary reports with embedded charts.
 - 💾 **Data Exporting**: Exports clean news records to CSV, JSONL, or Excel (`.xlsx`) with customizable filtering.
-- 🔍 **News Query & Browsing (Bonus)**: CLI subcommands (`list`, `show`) to search and view stored articles.
+- 🔍 **News Query & Browsing**: CLI subcommands (`list`, `show`) to search and view stored articles.
 
 ---
 
@@ -132,14 +132,15 @@ All commands are run through `main.py`.
 ### 1. Fetch News (`fetch`)
 ```bash
 # Fetch technology news via RSS
-python main.py fetch --source rss --category technology --query semiconductor --limit 10
+python main.py fetch --source rss --category technology --query semiconductor
 
 # Fetch via NewsAPI
-python main.py fetch --source api --category business --query economy --limit 10
+python main.py fetch --source api --category technology --query "artificial intelligence"
 
 # Fetch via Web Crawler
 python main.py fetch --source crawler --category technology --query AI --limit 5
 ```
+* `limit=10` is default
 
 ### 2. Clean & Deduplicate Data (`clean`)
 ```bash
@@ -172,12 +173,13 @@ python main.py analyze --category technology --date-from 2026-01-01 --date-to 20
 
 ### 5. Generate Report & Charts (`report`)
 ```bash
-# Generate a Markdown report with embedded charts
-python main.py report --format md
+# Generate a Markdown report (default) with embedded charts
+python main.py report [--category technology] [--date-from 2026-08-01] [--date-to 2026-08-07]
 
 # Generate a plain text report
 python main.py report --format txt
 ```
+* `--category`, `--date-from`, and `--date-to` are optional.
 
 ### 6. Export Clean Data (`export`)
 ```bash
@@ -190,6 +192,7 @@ python main.py export --format xlsx --status summarized
 # Export unsummarized data to JSONL
 python main.py export --format jsonl --status unsummarized
 ```
+* `status=all` is default
 
 ### 7. Browse Articles (`list` & `show`)
 ```bash
@@ -197,8 +200,10 @@ python main.py export --format jsonl --status unsummarized
 python main.py list --category technology --page 1 --page-size 10
 
 # Show full details of an article by ID
-python main.py show --id 1
+python main.py show --id 5
 ```
+* filtering for `list`: use `--category`, `--date-from`, `--date-to`, `--keyword` options
+* pagination for `list`: use `--page` (default=1) & `--page-size` (default=10)
 
 ---
 
@@ -212,6 +217,8 @@ After running pipeline commands, output files are organized as follows:
 | **Logs** | `logs/news_pipeline.log` | Execution logs containing timestamps and log levels. |
 | **Charts** | `output/charts/category_dist.png` | Bar chart of clean articles per category. |
 | **Charts** | `output/charts/daily_trend.png` | Line chart of daily article collection counts. |
+| **Charts** | `output/charts/sentiment_over_time.png` | stacked area/bar chart of sentiment over time. |
+| **Charts** | `output/charts/sentiment_by_category.png` | stacked bar chart of sentiment by category. |
 | **Reports** | `output/reports/report_YYYYMMDD_HHMMSS.md` | Comprehensive analysis report in Markdown format. |
 | **Exports** | `output/exports/news_status_YYYYMMDD_HHMMSS.csv` | Exported dataset files (CSV, JSONL, XLSX). |
 
@@ -221,7 +228,7 @@ After running pipeline commands, output files are organized as follows:
 
 ```text
                          [ Data Sources ]
-           ( RSS Feed  |  NewsAPI  |  Web Crawler )
+              ( RSS Feed  |  NewsAPI  |  Web Crawler )
                                 |
                                 v
                        python main.py fetch
@@ -231,7 +238,7 @@ After running pipeline commands, output files are organized as follows:
                                 |
                                 v
                        python main.py clean
-                    ( Deduplication: skip / upsert )
+                 ( Deduplication: skip / upsert )
                                 |
                                 v
                     [ SQLite: clean_news table ]
@@ -239,8 +246,8 @@ After running pipeline commands, output files are organized as follows:
              +------------------+------------------+
              |                                     |
              v                                     v
-  python main.py summarize              python main.py analyze
-  (Google Gemini 2.0 Flash)             (Multi-Article Trend Analysis)
+  python main.py summarize               python main.py analyze
+  (Google Gemini 3.5 Flash)           (Multi-Article Trend Analysis)
              |                                     |
              v                                     v
   Update clean_news status             [ SQLite: insights table ]
@@ -253,16 +260,17 @@ After running pipeline commands, output files are organized as follows:
                                 |
                                 v
                        python main.py export
-                     (Export CSV / JSONL / XLSX)
+                    (Export CSV / JSONL / XLSX)
 ```
 
 ---
 
 ## ⏱️ Automated Scheduling (Cron / Task Scheduler)
 
-You can set up periodic news collection and automated reporting using standard OS schedulers:
+How to set up periodic news collection and automated reporting using standard OS schedulers:
 
 ### Linux / macOS (`cron`)
+
 Edit your crontab using `crontab -e`:
 
 ```bash

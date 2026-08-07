@@ -353,7 +353,7 @@ def generate_report(args):
     report_text = "\n".join(lines)
 
     # --- Console output ---
-    logger.info("\n" + report_text)
+    print(report_text)
 
     # --- Save to file ---
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
