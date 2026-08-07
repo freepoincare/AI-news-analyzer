@@ -156,7 +156,7 @@ def generate_charts(stats, *, category=None, output_dir=CHARTS_DIR):
     """Generate charts and return their file paths.
 
     Args:
-        stats:      The dict returned by database.get_report_stats() (or combined stats).
+        stats:      The dict returned by database.get_report_stats() & get_sentiment_stats().
         category:   Category filter specified in report subcommand (or None).
         output_dir: Directory to save PNG files.
 

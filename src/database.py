@@ -350,6 +350,7 @@ def get_report_stats(category=None, date_from=None, date_to=None):
     category_counts  : list of (category, count)  — clean_news grouped by category matching filters
     daily_counts     : list of (date, count)      — clean_news grouped by published date matching filters
     top_sources      : list of (source, count)    — Top-10 sources in clean_news matching filters
+    sentiment_counts : list of (sentiment, count) — clean_news grouped by sentiment matching filters
     """
     conditions = []
     params = []
@@ -373,10 +374,10 @@ def get_report_stats(category=None, date_from=None, date_to=None):
     # Build WHERE clause for raw_news (using published_at or created_at if needed, but here raw_news has published_at and category)
     raw_conditions = []
     raw_params = []
+
     if category:
         raw_conditions.append("category = ?")
-        raw_params.append(category)
-        
+        raw_params.append(category)    
     if date_from:
         raw_conditions.append("published_at >= ?")
         raw_params.append(date_from)

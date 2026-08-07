@@ -102,10 +102,10 @@ def _build_report_lines(stats, chart_paths, insight, category=None, date_from=No
         "",
     ]
 
-    # --- Quality Metrics (§4.7: 2+ indicators) ---
+    # --- Quality Metrics ---
     lines += ["[ QUALITY METRICS ]"] + _quality_metrics(stats) + [""]
 
-    # --- Top N Sources (§4.7: 1+ TOP N) ---
+    # --- Top N Sources ---
     lines += ["[ TOP 5 SOURCES ]"] + _top_sources_block(stats, n=5) + [""]
 
     # --- Category Distribution ---
@@ -142,7 +142,7 @@ def _build_report_lines(stats, chart_paths, insight, category=None, date_from=No
         lines.append("  Sentiment by category     : (not generated — filtered or no data)")
     lines.append("")
 
-    # --- AI Insight (§4.7: AI insight result) ---
+    # --- AI Insight ---
     lines.append("[ AI INSIGHT ANALYSIS ]")
     if insight:
         lines += [
@@ -289,9 +289,7 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
         ]
         lines += insight["result_text"].splitlines()
     else:
-        lines.append(
-            "> No AI insight found. Run `python main.py analyze` first."
-        )
+        lines.append("> No AI insight found. Run `python main.py analyze` first.")
     lines.append("")
 
     return lines
@@ -302,8 +300,7 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
 # ---------------------------------------------------------------------------
 
 def generate_report(args):
-    """CLI entry point for 'python main.py report  # md (default)' or
-                           'python main.py report --format txt'.
+    """CLI entry point for 'python main.py report'.
     [collects stats] → [generates charts] → [loads AI insight] → [prints + saves file]
     Args:
         args.format: 'txt' or 'md' (default 'md').
