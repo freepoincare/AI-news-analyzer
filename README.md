@@ -80,6 +80,7 @@ ai-news-analyzer/
     ├── exporter.py          # Data export handlers (CSV, JSONL, Excel)
     ├── logging_config.py    # Logging setup (Stream + File handlers)
     ├── reporter.py          # Report generator linking stats, charts, and AI insights
+    ├── utils.py             # Utility functions
     └── visualizer.py        # Matplotlib chart rendering logic
 ```
 

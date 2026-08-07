@@ -287,7 +287,7 @@ def get_raw_news():
 
 
 def get_clean_news(*, article_id=None, status=None, category=None,
-                   date_from=None, date_to=None, limit=None):
+                   date_from=None, date_to=None, keyword=None, limit=None, offset=None):
     """Query clean_news with optional filters and return a list of dicts.
 
     Args:
@@ -296,7 +296,9 @@ def get_clean_news(*, article_id=None, status=None, category=None,
         category:   Filter by category string.
         date_from:  Include records where published_at >= date_from (YYYY-MM-DD).
         date_to:    Include records where published_at <= date_to (YYYY-MM-DD).
+        keyword:    Search substring in title, snippet, or content (case-insensitive).
         limit:      Maximum number of records to return.
+        offset:     Number of records to skip.
     """
     conditions = []     # collect WHERE condition
     params = []         # collect corresponding values using ? placeholder to avoid SQL injection
@@ -316,15 +318,50 @@ def get_clean_news(*, article_id=None, status=None, category=None,
     if date_to:
         conditions.append("published_at <= ?")
         params.append(date_to)
+    if keyword:
+        conditions.append("(title LIKE ? OR snippet LIKE ? OR content LIKE ?)")
+        kw_pattern = f"%{keyword}%"
+        params.extend([kw_pattern, kw_pattern, kw_pattern])
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-    limit_clause = f"LIMIT {int(limit)}" if limit else ""
+    limit_clause = f"LIMIT {int(limit)}" if limit is not None else ""
+    offset_clause = f"OFFSET {int(offset)}" if offset is not None and limit is not None else ""
 
-    sql = f"SELECT * FROM clean_news {where_clause} ORDER BY published_at DESC {limit_clause}"
+    sql = f"SELECT * FROM clean_news {where_clause} ORDER BY published_at DESC {limit_clause} {offset_clause}"
 
     with get_connection() as connection:
         rows = connection.execute(sql, params).fetchall()
         return [dict(row) for row in rows]
+
+
+def get_clean_news_count(*, category=None, date_from=None, date_to=None, keyword=None, status=None):
+    """Get total count of clean_news records matching filters."""
+    conditions = []
+    params = []
+
+    if status:
+        conditions.append("status = ?")
+        params.append(status)
+    if category:
+        conditions.append("category = ?")
+        params.append(category)
+    if date_from:
+        conditions.append("published_at >= ?")
+        params.append(date_from)
+    if date_to:
+        conditions.append("published_at <= ?")
+        params.append(date_to)
+    if keyword:
+        conditions.append("(title LIKE ? OR snippet LIKE ? OR content LIKE ?)")
+        kw_pattern = f"%{keyword}%"
+        params.extend([kw_pattern, kw_pattern, kw_pattern])
+
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    sql = f"SELECT COUNT(*) FROM clean_news {where_clause}"
+
+    with get_connection() as connection:
+        count = connection.execute(sql, params).fetchone()[0]
+        return count
 
 
 # fetches the most recent AI analysis result
