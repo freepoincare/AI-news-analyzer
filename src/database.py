@@ -176,46 +176,86 @@ def save_clean_news(records, policy="skip"):
         records: List of cleaned record dicts (same schema as raw, but
                  with normalised fields).
         policy:  'skip'   – INSERT OR IGNORE: keep existing row untouched.
-                 'upsert' – INSERT OR REPLACE: overwrite existing row.
+                 'upsert' – ON CONFLICT DO UPDATE: update record details while
+                            preserving existing summary, sentiment, and status.
     """
-    if policy == "upsert":
-        insert_sql = "INSERT OR REPLACE"
-    else:  # default: skip
-        insert_sql = "INSERT OR IGNORE"    # if duplicate GUID exists, SQLite ignores it
-
     with get_connection() as connection:
         for record in records:
-            connection.execute(
-                f"""
-                {insert_sql} INTO clean_news (
-                    title,
-                    url,
-                    source,
-                    published_at,
-                    snippet,
-                    content,
-                    category,
-                    unique_guid,
-                    method,
-                    query,
-                    collected_at
+            if policy == "upsert":
+                connection.execute(
+                    """
+                    INSERT INTO clean_news (
+                        title,
+                        url,
+                        source,
+                        published_at,
+                        snippet,
+                        content,
+                        category,
+                        unique_guid,
+                        method,
+                        query,
+                        collected_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(unique_guid) DO UPDATE SET
+                        title = excluded.title,
+                        url = excluded.url,
+                        source = excluded.source,
+                        published_at = excluded.published_at,
+                        snippet = excluded.snippet,
+                        content = excluded.content,
+                        category = excluded.category,
+                        method = excluded.method,
+                        query = excluded.query,
+                        collected_at = excluded.collected_at
+                    """,
+                    (
+                        record["title"],
+                        record["url"],
+                        record["source"],
+                        record["published_at"],
+                        record["snippet"],
+                        record["content"],
+                        record.get("category", ""),
+                        record["unique_guid"],
+                        record["method"],
+                        record["query"],
+                        record["collected_at"],
+                    ),
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    record["title"],
-                    record["url"],
-                    record["source"],
-                    record["published_at"],
-                    record["snippet"],
-                    record["content"],
-                    record.get("category", ""),
-                    record["unique_guid"],
-                    record["method"],
-                    record["query"],
-                    record["collected_at"],
+            else:  # default: skip
+                connection.execute(
+                    """
+                    INSERT OR IGNORE INTO clean_news (
+                        title,
+                        url,
+                        source,
+                        published_at,
+                        snippet,
+                        content,
+                        category,
+                        unique_guid,
+                        method,
+                        query,
+                        collected_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        record["title"],
+                        record["url"],
+                        record["source"],
+                        record["published_at"],
+                        record["snippet"],
+                        record["content"],
+                        record.get("category", ""),
+                        record["unique_guid"],
+                        record["method"],
+                        record["query"],
+                        record["collected_at"],
+                    ),
                 )
-            )
         connection.commit()
 #    logger.info(f"Promoted {len(records)} clean news record(s) to database (policy='{policy}').")
 

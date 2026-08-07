@@ -106,6 +106,29 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+<details>
+<summary>[sqlite3 installation]</summary>
+<br>
+
+* sqlite3 should be also installed.
+
+```bash
+# Ubuntu / Debian / Linux Mint
+sudo apt update && sudo apt install sqlite3 -y
+
+# CentOS / RHEL / Fedora
+sudo dnf install sqlite3 -y
+
+# macOS
+brew install sqlite
+```
+* Windows (Using Git Bash / WSL)
+    * WSL (Ubuntu): Use the Ubuntu command above.
+    * Git Bash: Download the `sqlite-tools-win-x64-*.zip` (or `win32-x86` depending on the system architecture) under the "precompiled binaries for Windows" section from the official [SQLite Download Page](https://www.sqlite.org/download.html), extract sqlite3.exe, and add it to your system's Environment Variables `PATH`.
+
+<br>
+</details>
+
 ---
 
 ## 🔑 API Key Setup
@@ -129,6 +152,12 @@ Get an API key from [Google AI Studio](https://aistudio.google.com/).
 ## 🚀 Usage
 
 All commands are run through `main.py`.
+
+First, check available subcommands, options, and usage instructions:
+```bash
+python main.py --help  # or '-h'
+python main.py [ fetch | clean | summarize | analyze | report | export | list | show] -h
+```
 
 ### 1. Fetch News (`fetch`)
 ```bash
