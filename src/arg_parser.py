@@ -21,7 +21,7 @@ def parse_arguments():
     clean_parser.add_argument("--policy", type=str.lower, choices=["skip", "upsert"], default="skip", help="Duplicate handling policy: 'skip' to ignore duplicates, 'upsert' to update existing records")
 
     # summarize
-    summarize_parser = subparsers.add_parser("summarize", help="Summarize news articles using AI")
+    summarize_parser = subparsers.add_parser("summarize", help="Summarize news articles (with full content, not snippet-only) using AI)")
     summarize_group = summarize_parser.add_mutually_exclusive_group(required=True)
     summarize_group.add_argument("--all", action="store_true", help="Summarize all available news") # store_true means that if the flag is present, it will be set to True; otherwise, it will be False
     summarize_group.add_argument("--id", type=int, help="ID of a specific article to summarize")    # including action="append" allows 'python main.py summarize --id 5 --id 10'; it will append the values to a list; otherwise, it will be a single value

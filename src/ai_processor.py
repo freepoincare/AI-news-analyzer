@@ -108,13 +108,9 @@ def _require_clean_data(records, command_name):
         False — no records; caller should return immediately.
     """
     if not records:
-        print(
-            f"[ERROR] No clean data found. "
-            f"Please run 'python main.py clean' before running '{command_name}'."
-        )
         logger.error(
-            f"'{command_name}' aborted: clean_news table is empty. "
-            f"Run 'python main.py clean' first."
+            f"'{command_name}' aborted: no clean data found. "
+            f"Please run 'python main.py clean' before running '{command_name}' or use other options."
         )
         return False
     return True
@@ -146,8 +142,8 @@ def summarize_news(args):
         records = get_clean_news(article_id=args.id, content_source=allowed_sources)
     elif args.unsummarized:
         records = get_clean_news(status="unsummarized", content_source=allowed_sources, limit=args.limit)
-    else:  # (--all); default: skip already-summarized articles; keeping this else branch for clarity
-        records = get_clean_news(status="unsummarized", content_source=allowed_sources, limit=args.limit)
+    else:  # args.all: summarize all unsummarized articles without limit
+        records = get_clean_news(status="unsummarized", content_source=allowed_sources)
 
     # --- pipeline guard: refuse to proceed without clean data ---
     if not _require_clean_data(records, "summarize"):
