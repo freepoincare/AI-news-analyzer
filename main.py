@@ -33,6 +33,7 @@ def list_news(args):
         date_from=args.date_from,
         date_to=args.date_to,
         keyword=args.keyword,
+        order_by="id ASC",
         limit=page_size,
         offset=offset
     )

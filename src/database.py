@@ -344,7 +344,8 @@ def get_raw_news():
 
 
 def get_clean_news(*, article_id=None, status=None, category=None,
-                   date_from=None, date_to=None, keyword=None, content_source=None, limit=None, offset=None):
+                   date_from=None, date_to=None, keyword=None, content_source=None,
+                   order_by="published_at DESC", limit=None, offset=None):
     """Query clean_news with optional filters and return a list of dicts.
 
     Args:
@@ -355,6 +356,7 @@ def get_clean_news(*, article_id=None, status=None, category=None,
         date_to:        Include records where published_at <= date_to (YYYY-MM-DD).
         keyword:        Search substring in title, snippet, or content (case-insensitive).
         content_source: Filter by content_source ('full', 'snippet', 'none', or list/tuple of them).
+        order_by:       SQL ORDER BY clause (default "published_at DESC").
         limit:          Maximum number of records to return.
         offset:         Number of records to skip.
     """
@@ -393,7 +395,7 @@ def get_clean_news(*, article_id=None, status=None, category=None,
     limit_clause = f"LIMIT {int(limit)}" if limit is not None else ""
     offset_clause = f"OFFSET {int(offset)}" if offset is not None and limit is not None else ""
 
-    sql = f"SELECT * FROM clean_news {where_clause} ORDER BY published_at DESC {limit_clause} {offset_clause}"
+    sql = f"SELECT * FROM clean_news {where_clause} ORDER BY {order_by} {limit_clause} {offset_clause}"
 
     with get_connection() as connection:
         rows = connection.execute(sql, params).fetchall()
