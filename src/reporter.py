@@ -182,11 +182,11 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     category_str = category.capitalize() if category else "All categories"
 
     lines += [
-        "# AI News Analyzer — Analysis Report",
+        "# AI News Analyzer - Analysis Report",
         "",
-        f"Period: {period_str}",
-        f"Category: {category_str}",
-        f"**Generated:** {now}",
+        f"* Period: {period_str}",
+        f"* Category: {category_str}",
+        f"* Generated: {now}",
         "",
         "---",
         "",
@@ -253,26 +253,26 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     # --- Charts ---
     lines += ["## Charts", ""]
     if chart_paths.get("category_chart"):
-        rel = Path(chart_paths["category_chart"])
-        lines.append(f"![Category Distribution]({rel})")
+        chart_name = Path(chart_paths["category_chart"]).name
+        lines.append(f"![Category Distribution](../charts/{chart_name})")
     else:
         lines.append("_Category distribution chart not generated (no data)._")
     lines.append("")
     if chart_paths.get("daily_chart"):
-        rel = Path(chart_paths["daily_chart"])
-        lines.append(f"![Daily Trend]({rel})")
+        chart_name = Path(chart_paths["daily_chart"]).name
+        lines.append(f"![Daily Trend](../charts/{chart_name})")
     else:
         lines.append("_Daily trend chart not generated (no data)._")
     lines.append("")
     if chart_paths.get("sentiment_over_time_chart"):
-        rel = Path(chart_paths["sentiment_over_time_chart"])
-        lines.append(f"![Sentiment Over Time]({rel})")
+        chart_name = Path(chart_paths["sentiment_over_time_chart"]).name
+        lines.append(f"![Sentiment Over Time](../charts/{chart_name})")
     else:
         lines.append("_Sentiment over time chart not generated (no data)._")
     lines.append("")
     if chart_paths.get("sentiment_by_category_chart"):
-        rel = Path(chart_paths["sentiment_by_category_chart"])
-        lines.append(f"![Sentiment By Category]({rel})")
+        chart_name = Path(chart_paths["sentiment_by_category_chart"]).name
+        lines.append(f"![Sentiment By Category](../charts/{chart_name})")
     elif not category:
         lines.append("_Sentiment by category chart not generated (no data)._")
     lines.append("")
@@ -281,10 +281,10 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     lines += ["## AI Insight Analysis", ""]
     if insight:
         lines += [
-            f"- **Analyzed at:** {insight.get('analyzed_at', 'N/A')}",
-            f"- **Articles used:** {insight.get('article_count', 'N/A')}",
-            f"- **Category filter:** {insight.get('category') or 'all'}",
-            f"- **Date range:** {insight.get('date_from') or 'N/A'} ~ {insight.get('date_to') or 'N/A'}",
+            f"- Analyzed at: {insight.get('analyzed_at', 'N/A')}",
+            f"- Articles used: {insight.get('article_count', 'N/A')}",
+            f"- Category filter: {insight.get('category') or 'all'}",
+            f"- Date range: {insight.get('date_from') or 'N/A'} ~ {insight.get('date_to') or 'N/A'}",
             "",
         ]
         lines += insight["result_text"].splitlines()
@@ -353,7 +353,9 @@ def generate_report(args):
     report_text = "\n".join(lines)
 
     # --- Console output ---
+    print("=" * 80)
     print(report_text)
+    print("=" * 80)
 
     # --- Save to file ---
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)

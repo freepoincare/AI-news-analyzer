@@ -143,9 +143,9 @@ def summarize_news(args):
     if args.id:
         records = get_clean_news(article_id=args.id, content_source=allowed_sources)
     elif args.unsummarized:
-        records = get_clean_news(status="unsummarized", content_source=allowed_sources, limit=args.limit)
+        records = get_clean_news(status="unsummarized", content_source=allowed_sources, order_by="id ASC", limit=args.limit)
     else:  # args.all: summarize all unsummarized articles without limit
-        records = get_clean_news(status="unsummarized", content_source=allowed_sources)
+        records = get_clean_news(status="unsummarized", content_source=allowed_sources, order_by="id ASC")
 
     # --- pipeline guard: refuse to proceed without clean data ---
     if not _require_clean_data(records, "summarize"):
@@ -260,7 +260,6 @@ def analyze_news(args):
     Reads only from clean_news. Aborts with a clear message if no matching
     clean records exist for the given filters.
 
-    Per §4.5:
       - Filters by date range and/or category.
       - Sends combined article text to the Gemini API.
       - Analysis covers at least 4 items: Key Trends, Core Keywords,

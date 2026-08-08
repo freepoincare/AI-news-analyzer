@@ -245,7 +245,7 @@ def plot_sentiment_over_time(sentiment_data, *, output_dir=CHARTS_DIR):
             ax.bar(dates, vals, bottom=bottoms, label=label, color=color, edgecolor="white")
             bottoms = [b + v for b, v in zip(bottoms, vals)]
 
-    ax.set_xlabel("Date", fontsize=11)
+    ax.set_xlabel("Published Date", fontsize=11)
     ax.set_ylabel("Article Count", fontsize=11)
     ax.set_title("Sentiment Over Time", fontsize=14, fontweight="bold", pad=12)
     ax.spines[["top", "right"]].set_visible(False)

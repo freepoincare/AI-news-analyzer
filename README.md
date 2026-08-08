@@ -65,7 +65,7 @@ ai-news-analyzer/
 │   └── news.db              # SQLite database (raw_news, clean_news, insights)
 ├── logs/
 │   └── news_pipeline.log    # Pipeline execution log file
-├── output/
+├── output/                  # Output folder (automatic generation)
 │   ├── charts/              # Generated matplotlib chart images (PNG)
 │   ├── exports/             # Exported files (CSV, JSONL, XLSX)
 │   └── reports/             # Generated reports (MD, TXT)

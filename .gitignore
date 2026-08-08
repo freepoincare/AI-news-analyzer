@@ -38,3 +38,6 @@ test_collector.py
 # --- Data Files ---
 data/*
 !data/.gitkeep
+
+# --- Output Files ---
+output/*
