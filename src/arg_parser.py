@@ -2,6 +2,7 @@ import argparse
 from .config import CATEGORIES
 from .utils import validate_date
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="AI News Trend and Insight Analysis Report Generator")
 
@@ -67,4 +68,10 @@ def parse_arguments():
     # category_group.add_argument("--add", type=str, help="Add a new category")
     # category_group.add_argument("--remove", type=str, help="Remove an existing category")
 
-    return parser.parse_args()  # args
+    args = parser.parse_args()
+
+    if getattr(args, "date_from", None) and getattr(args, "date_to", None):
+        if args.date_from > args.date_to:
+            parser.error("--date-from cannot be after --date-to.")
+
+    return args

@@ -109,8 +109,8 @@ def _require_clean_data(records, command_name):
     """
     if not records:
         logger.error(
-            f"'{command_name}' aborted: no clean data found. "
-            f"Please run 'python main.py clean' before running '{command_name}' "
+            f"'{command_name}' aborted: no clean data found for such option(s). "
+            f"You might need to run 'python main.py clean' before running '{command_name}' "
             "or use other options. "
             "Articles with only snippets (no full content) are skipped by default."
         )
@@ -274,7 +274,12 @@ def analyze_news(args):
     )
 
     # --- pipeline guard: refuse to proceed without clean data ---
-    if not _require_clean_data(records, "analyze"):
+    if not records:
+        logger.error(
+            f"'analyze' aborted: no clean data found for such criteria. "
+            f"You might need to run 'python main.py clean' before running 'analyze' "
+            "or use different criteria. "
+        )
         return
 
     total = len(records)
