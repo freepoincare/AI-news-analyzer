@@ -27,6 +27,7 @@ def parse_arguments():
     summarize_group.add_argument("--id", type=int, help="ID of a specific article to summarize")    # including action="append" allows 'python main.py summarize --id 5 --id 10'; it will append the values to a list; otherwise, it will be a single value
     summarize_group.add_argument("--unsummarized", action="store_true", help="Summarize only articles that haven't been summarized yet")
     summarize_parser.add_argument("--limit", type=int, default=5, help="Maximum number of articles to summarize (default: 5)")
+    summarize_parser.add_argument("--include-snippet", action="store_true", default=False, help="Include snippet-only articles in summarization (default: skip)")
 
     # analyze
     analyze_parser = subparsers.add_parser("analyze", help="Analyze news trends using AI")

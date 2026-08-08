@@ -169,7 +169,7 @@ def _clean_record(raw):
     """Normalize and enrich a single raw record.
 
     Returns a cleaned dict ready for save_clean_news(), or None if the
-    record fails validation.
+    record fails validation or has empty content and snippet.
     """
 
     # (1) Validate required fields (title, url)
@@ -183,31 +183,45 @@ def _clean_record(raw):
     url = raw["url"].strip()
     fetch_url = resolve_google_rss_link(url) if "news.google.com" in url else url
 
+    snippet = _normalize_whitespace(_strip_html(raw.get("snippet", "")))
+
     # (2) Fetch full article body; fall back to snippet when unavailable
     logger.info(f"Fetching full content: {fetch_url}")
-    content = _fetch_full_content(fetch_url, raw_content=raw.get("content", ""))
-    if not content:
+    full_content = _fetch_full_content(fetch_url, raw_content=raw.get("content", ""))
+    
+    if full_content:
+        content = _normalize_whitespace(full_content)
+        content_source = "full"
+    elif snippet:
         logger.warning(
             f"No full content retrieved for {fetch_url}. "
             f"Using snippet as fallback."
         )
-        content = _strip_html(raw.get("snippet", ""))  # fallback
+        content = snippet
+        content_source = "snippet"
+    else:
+        logger.warning(
+            f"Skipping raw record id={raw.get('id')} — "
+            f"both snippet and content are empty."
+        )
+        return None
 
     raw_guid = raw.get("unique_guid", url)
     unique_guid = fetch_url if "news.google.com" in raw_guid else raw_guid
 
     return {
-        "title":        _normalize_whitespace(raw["title"]),
-        "url":          fetch_url if fetch_url else url,
-        "source":       _normalize_whitespace(raw.get("source", "")),
-        "published_at": _normalize_date(raw.get("published_at")),
-        "snippet":      _normalize_whitespace(_strip_html(raw.get("snippet", ""))),
-        "content":      _normalize_whitespace(content),
-        "category":     raw.get("category", ""),
-        "unique_guid":  unique_guid,
-        "method":       raw.get("method", ""),
-        "query":        raw.get("query", ""),
-        "collected_at": raw.get("collected_at", ""),
+        "title":          _normalize_whitespace(raw["title"]),
+        "url":            fetch_url if fetch_url else url,
+        "source":         _normalize_whitespace(raw.get("source", "")),
+        "published_at":   _normalize_date(raw.get("published_at")),
+        "snippet":        snippet,
+        "content":        content,
+        "content_source": content_source,
+        "category":       raw.get("category", ""),
+        "unique_guid":    unique_guid,
+        "method":         raw.get("method", ""),
+        "query":          raw.get("query", ""),
+        "collected_at":   raw.get("collected_at", ""),
     }
 
 

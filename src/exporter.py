@@ -40,6 +40,7 @@ EXPORT_COLUMNS = [
     "status",
     "snippet",
     "content",
+    "content_source",
     "summary",
     "sentiment",
     "method",

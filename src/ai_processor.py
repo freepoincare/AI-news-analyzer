@@ -132,17 +132,22 @@ def summarize_news(args):
 
       - Supports --all, --id, --unsummarized selection options
       - Supports --limit for batch processing.
+      - Supports --include-snippet option to include snippet-only articles.
       - Already-summarized articles are skipped by default (via status filter).
       - On API failure: logs the error and skips the article.
       - On success: saves the summary + sentiment and flips status to 'summarized'.
     """
+    # Determine allowed content_sources for summarization
+    include_snippet = getattr(args, "include_snippet", False)
+    allowed_sources = ["full", "snippet"] if include_snippet else ["full"]
+
     # --- resolve which records to process ---
     if args.id:
-        records = get_clean_news(article_id=args.id)
+        records = get_clean_news(article_id=args.id, content_source=allowed_sources)
     elif args.unsummarized:
-        records = get_clean_news(status="unsummarized", limit=args.limit)
+        records = get_clean_news(status="unsummarized", content_source=allowed_sources, limit=args.limit)
     else:  # (--all); default: skip already-summarized articles; keeping this else branch for clarity
-        records = get_clean_news(status="unsummarized", limit=args.limit)
+        records = get_clean_news(status="unsummarized", content_source=allowed_sources, limit=args.limit)
 
     # --- pipeline guard: refuse to proceed without clean data ---
     if not _require_clean_data(records, "summarize"):

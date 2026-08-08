@@ -77,6 +77,7 @@ def initialize_database():
                 published_at TEXT,
                 snippet TEXT,
                 content TEXT,
+                content_source TEXT,
                 category TEXT,
 
                 unique_guid TEXT UNIQUE,
@@ -107,9 +108,8 @@ def initialize_database():
         )
         connection.commit()
 
-        # Migration guard: 'sentiment' was added after initial release.
-        # Users with an existing DB file won't have this column until ALTER TABLE runs.
-        # --- migrate: add sentiment column if missing (for existing DBs) ---
+        # Migration guard: 'sentiment' and 'content_source' were added after initial release.
+        # Users with an existing DB file won't have these columns until ALTER TABLE runs.
         cols = {
             row[1]
             for row in connection.execute("PRAGMA table_info(clean_news)").fetchall()
@@ -118,6 +118,10 @@ def initialize_database():
             connection.execute("ALTER TABLE clean_news ADD COLUMN sentiment TEXT")
             connection.commit()
             logger.info("Migration: added 'sentiment' column to clean_news.")
+        if "content_source" not in cols:
+            connection.execute("ALTER TABLE clean_news ADD COLUMN content_source TEXT")
+            connection.commit()
+            logger.info("Migration: added 'content_source' column to clean_news.")
 #    logger.info("Database tables initialized successfully.")
 
 
@@ -192,13 +196,14 @@ def save_clean_news(records, policy="skip"):
                         published_at,
                         snippet,
                         content,
+                        content_source,
                         category,
                         unique_guid,
                         method,
                         query,
                         collected_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(unique_guid) DO UPDATE SET
                         title = excluded.title,
                         url = excluded.url,
@@ -206,6 +211,7 @@ def save_clean_news(records, policy="skip"):
                         published_at = excluded.published_at,
                         snippet = excluded.snippet,
                         content = excluded.content,
+                        content_source = excluded.content_source,
                         category = excluded.category,
                         method = excluded.method,
                         query = excluded.query,
@@ -218,6 +224,7 @@ def save_clean_news(records, policy="skip"):
                         record["published_at"],
                         record["snippet"],
                         record["content"],
+                        record.get("content_source", "none"),
                         record.get("category", ""),
                         record["unique_guid"],
                         record["method"],
@@ -235,13 +242,14 @@ def save_clean_news(records, policy="skip"):
                         published_at,
                         snippet,
                         content,
+                        content_source,
                         category,
                         unique_guid,
                         method,
                         query,
                         collected_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         record["title"],
@@ -250,6 +258,7 @@ def save_clean_news(records, policy="skip"):
                         record["published_at"],
                         record["snippet"],
                         record["content"],
+                        record.get("content_source", "none"),
                         record.get("category", ""),
                         record["unique_guid"],
                         record["method"],
@@ -335,18 +344,19 @@ def get_raw_news():
 
 
 def get_clean_news(*, article_id=None, status=None, category=None,
-                   date_from=None, date_to=None, keyword=None, limit=None, offset=None):
+                   date_from=None, date_to=None, keyword=None, content_source=None, limit=None, offset=None):
     """Query clean_news with optional filters and return a list of dicts.
 
     Args:
-        article_id: Return only the record with this ID.
-        status:     Filter by 'summarized' or 'unsummarized'. None = all.
-        category:   Filter by category string.
-        date_from:  Include records where published_at >= date_from (YYYY-MM-DD).
-        date_to:    Include records where published_at <= date_to (YYYY-MM-DD).
-        keyword:    Search substring in title, snippet, or content (case-insensitive).
-        limit:      Maximum number of records to return.
-        offset:     Number of records to skip.
+        article_id:     Return only the record with this ID.
+        status:         Filter by 'summarized' or 'unsummarized'. None = all.
+        category:       Filter by category string.
+        date_from:      Include records where published_at >= date_from (YYYY-MM-DD).
+        date_to:        Include records where published_at <= date_to (YYYY-MM-DD).
+        keyword:        Search substring in title, snippet, or content (case-insensitive).
+        content_source: Filter by content_source ('full', 'snippet', 'none', or list/tuple of them).
+        limit:          Maximum number of records to return.
+        offset:         Number of records to skip.
     """
     conditions = []     # collect WHERE condition
     params = []         # collect corresponding values using ? placeholder to avoid SQL injection
@@ -366,6 +376,14 @@ def get_clean_news(*, article_id=None, status=None, category=None,
     if date_to:
         conditions.append("published_at <= ?")
         params.append(date_to)
+    if content_source:
+        if isinstance(content_source, (list, tuple, set)):
+            placeholders = ", ".join(["?"] * len(content_source))
+            conditions.append(f"content_source IN ({placeholders})")
+            params.extend(list(content_source))
+        else:
+            conditions.append("content_source = ?")
+            params.append(content_source)
     if keyword:
         conditions.append("(title LIKE ? OR snippet LIKE ? OR content LIKE ?)")
         kw_pattern = f"%{keyword}%"
