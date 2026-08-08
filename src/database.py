@@ -432,7 +432,38 @@ def get_clean_news_count(*, category=None, date_from=None, date_to=None, keyword
         return count
 
 
-# fetches the most recent AI analysis result
+# fetches the most recent AI analysis result matching exact scope (category, date_from, date_to)
+def get_matching_insight(category=None, date_from=None, date_to=None):
+    """Return the most recently saved insight record matching the exact scope, or None."""
+    conditions = []
+    params = []
+
+    if category is not None:
+        conditions.append("category = ?")
+        params.append(category)
+    else:
+        conditions.append("(category IS NULL OR category = '')")
+
+    if date_from is not None:
+        conditions.append("date_from = ?")
+        params.append(date_from)
+    else:
+        conditions.append("(date_from IS NULL OR date_from = '')")
+
+    if date_to is not None:
+        conditions.append("date_to = ?")
+        params.append(date_to)
+    else:
+        conditions.append("(date_to IS NULL OR date_to = '')")
+
+    where_clause = f"WHERE {' AND '.join(conditions)}"
+    sql = f"SELECT * FROM insights {where_clause} ORDER BY id DESC LIMIT 1"
+
+    with get_connection() as connection:
+        row = connection.execute(sql, params).fetchone()
+        return dict(row) if row else None
+
+
 def get_latest_insight():
     """Return the most recently saved insight record as a dict, or None."""
     with get_connection() as connection:

@@ -19,7 +19,7 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .database import get_report_stats, get_latest_insight, get_sentiment_stats
+from .database import get_report_stats, get_matching_insight, get_sentiment_stats
 from .visualizer import generate_charts
 from .utils import format_date_only, format_datetime_utc
 
@@ -352,10 +352,27 @@ def generate_report(args):
     if chart_paths.get("sentiment_by_category_chart"):
         logger.info(f"Sentiment by category chart saved: {chart_paths['sentiment_by_category_chart']}")
 
-    logger.info("Loading latest AI insight...")
-    insight = get_latest_insight()
+    logger.info("Loading matching AI insight for requested scope...")
+    insight = get_matching_insight(category=category, date_from=date_from, date_to=date_to)
     if not insight:
-        logger.warning("No AI insight found. Run 'python main.py analyze' first.")
+        scope_parts = []
+        if category:
+            scope_parts.append(f"category='{category}'")
+        if date_from or date_to:
+            d_from = format_date_only(date_from) or "start"
+            d_to = format_date_only(date_to) or "end"
+            scope_parts.append(f"period={d_from}~{d_to}")
+
+        if scope_parts:
+            scope_str = " with " + " and ".join(scope_parts)
+        else:
+            scope_str = " without category or period filters"
+
+        logger.error(
+            f"No AI insight found matching the requested scope ({scope_str.strip()}). "
+            f"Please run 'python main.py analyze'{scope_str} first."
+        )
+        return
 
     # --- Build report content ---
     if fmt == "md":
