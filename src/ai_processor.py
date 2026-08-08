@@ -110,7 +110,9 @@ def _require_clean_data(records, command_name):
     if not records:
         logger.error(
             f"'{command_name}' aborted: no clean data found. "
-            f"Please run 'python main.py clean' before running '{command_name}' or use other options."
+            f"Please run 'python main.py clean' before running '{command_name}' "
+            "or use other options. "
+            "Articles with only snippets (no full content) are skipped by default."
         )
         return False
     return True
@@ -235,25 +237,17 @@ def summarize_news(args):
 
             original_len = len(text)
             summary_len = len(summary_text)
-            print(
-                f"[INFO] [{i}/{total}] ID={article_id} summary completed "
-                f"({original_len} chars → {summary_len} chars), "
-                f"sentiment={sentiment_value}"
-            )
             logger.info(
                 f"[{i}/{total}] ID={article_id} summarized "
-                f"({original_len} chars → {summary_len} chars), "
-                f"sentiment={sentiment_value}: {title[:60]}"
+                f"({original_len} chars → {summary_len} chars)"
             )
             success_count += 1
 
         except Exception as exc:
-            logger.error(f"[{i}/{total}] ID={article_id} summary failed: {exc}")
-            print(f"[WARNING] [{i}/{total}] ID={article_id} summary failed, skipping: {exc}")
+            logger.error(f"[{i}/{total}] ID={article_id} summary failed, skipping: {exc}")
             fail_count += 1
 
-    print(f"[INFO] Summary completed: {success_count} succeeded, {fail_count} failed")
-    logger.info(f"summarize finished: {success_count} succeeded, {fail_count} failed.")
+    logger.info(f"summary completed: {success_count} succeeded, {fail_count} failed.")
 
 
 # ---------------------------------------------------------------------------

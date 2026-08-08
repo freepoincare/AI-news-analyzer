@@ -38,3 +38,8 @@ def setup_logging(config):
             file_handler,
         ],
     )
+
+    # --- Silence third-party library logs ---
+    logging.getLogger("google_genai").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
