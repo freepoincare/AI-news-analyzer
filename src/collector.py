@@ -56,22 +56,32 @@ def resolve_google_rss_link(google_link):
     """Google RSS redirect URL into the actual publisher article URL.
     news.google.com/rss/articles/... → Resolve a Google News RSS URL to the article URL."""
     try:
+        from googlenewsdecoder import gnewsdecoder
+        res = gnewsdecoder(google_link)
+        if res.get("status") and res.get("decoded_url"):
+            return res["decoded_url"]
+    except Exception as e:
+        logger.debug(f"googlenewsdecoder failed for {google_link}: {e}")
+
+    try: # fall back to requests.head() if googlenewsdecoder fails
         response = requests.head(google_link, allow_redirects=True, timeout=5)
-        response.raise_for_status()  # HTTP errors (4xx, 5xx) are raised as an exception, then caught by the except block below.
-        return response.url
-    except requests.RequestException as e:  # some news servers(BBC, Reuters, etc.) reject HEAD request with 405. 'resolve' itself fails without GET fallback.
+        response.raise_for_status()
+        if "news.google.com" not in response.url:
+            return response.url
+    except requests.RequestException as e:
         logger.debug(f"HEAD request failed for {google_link}: {e}")
 
-    try:
+    try: # fall back to requests.get() if requests.head() fails
         response = requests.get(google_link, allow_redirects=True, timeout=5)
         response.raise_for_status()
-        return response.url
+        if "news.google.com" not in response.url:
+            return response.url
     except requests.RequestException as e:
         logger.warning(
             f"Could not resolve Google RSS URL '{google_link}'. "
             f"Using the original URL instead: {e}"
         )
-        return google_link
+    return google_link
 
 
 def normalize_rss_entry(entry, query, category):

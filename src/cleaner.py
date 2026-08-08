@@ -32,12 +32,21 @@ import re
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
-from newspaper import Article
+import requests
+from bs4 import BeautifulSoup
+from newspaper import Article, Config
 from newspaper.article import ArticleException
 
+from .collector import resolve_google_rss_link
 from .database import get_raw_news, save_clean_news, get_existing_clean_guids
 
 logger = logging.getLogger(__name__)
+
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0.0.0 Safari/537.36"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -100,23 +109,51 @@ def _normalize_whitespace(text):
 # Full-article content fetching
 # ---------------------------------------------------------------------------
 
-def _fetch_full_content(url):
-    """Download and parse the full article body using newspaper4k.
+def _fetch_full_content(url, raw_content=""):
+    """Download and parse the full article body using newspaper4k, BeautifulSoup fallback, or raw content.
 
     Returns the article text, or an empty string if the fetch fails
     (network error, paywall, bot-block, etc.).
     """
+    # 1. First check if raw_content already contains full article text
+    cleaned_raw = _strip_html(raw_content)
+    if len(cleaned_raw) > 200:
+        return cleaned_raw
+
+    # 2. Try fetching with newspaper4k using realistic browser User-Agent
     try:
-        article = Article(url, request_timeout=10)
+        config = Config()
+        config.browser_user_agent = USER_AGENT
+        config.request_timeout = 10
+
+        article = Article(url, config=config)
         article.download()
         article.parse()
-        return article.text.strip()
+        text = article.text.strip()
+        if text and len(text) > 100:
+            return text
     except ArticleException as e:
         logger.warning(f"newspaper4k could not parse article at {url}: {e}")
-        return ""
     except Exception as e:
         logger.warning(f"Unexpected error fetching full content for {url}: {e}")
-        return ""
+
+    # 3. Fallback: direct HTTP GET + BeautifulSoup paragraph extraction
+    try:
+        headers = {"User-Agent": USER_AGENT}
+        resp = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+        if resp.status_code == 200:
+            soup = BeautifulSoup(resp.text, "html.parser")
+            # Remove scripts, styles, header, footer, nav
+            for tag in soup(["script", "style", "header", "footer", "nav", "aside"]):
+                tag.decompose()
+            paragraphs = [p.get_text().strip() for p in soup.find_all("p") if len(p.get_text().strip()) > 30]
+            full_text = "\n\n".join(paragraphs)
+            if len(full_text) > 100:
+                return full_text
+    except Exception as e:
+        logger.warning(f"BeautifulSoup fallback failed for {url}: {e}")
+
+    return cleaned_raw
 
 
 # ---------------------------------------------------------------------------
@@ -144,26 +181,30 @@ def _clean_record(raw):
         return None
 
     url = raw["url"].strip()
+    fetch_url = resolve_google_rss_link(url) if "news.google.com" in url else url
 
     # (2) Fetch full article body; fall back to snippet when unavailable
-    logger.info(f"Fetching full content: {url}")
-    content = _fetch_full_content(url)
+    logger.info(f"Fetching full content: {fetch_url}")
+    content = _fetch_full_content(fetch_url, raw_content=raw.get("content", ""))
     if not content:
         logger.warning(
-            f"No full content retrieved for {url}. "
+            f"No full content retrieved for {fetch_url}. "
             f"Using snippet as fallback."
         )
         content = _strip_html(raw.get("snippet", ""))  # fallback
 
+    raw_guid = raw.get("unique_guid", url)
+    unique_guid = fetch_url if "news.google.com" in raw_guid else raw_guid
+
     return {
         "title":        _normalize_whitespace(raw["title"]),
-        "url":          url,
+        "url":          fetch_url if fetch_url else url,
         "source":       _normalize_whitespace(raw.get("source", "")),
         "published_at": _normalize_date(raw.get("published_at")),
         "snippet":      _normalize_whitespace(_strip_html(raw.get("snippet", ""))),
         "content":      _normalize_whitespace(content),
         "category":     raw.get("category", ""),
-        "unique_guid":  raw.get("unique_guid", url),
+        "unique_guid":  unique_guid,
         "method":       raw.get("method", ""),
         "query":        raw.get("query", ""),
         "collected_at": raw.get("collected_at", ""),
@@ -183,11 +224,10 @@ def clean_news(args):
 
     raw_records = get_raw_news()
     if not raw_records:
-        print(
-            "[WARNING] No raw data found. "
+        logger.warning(
+            "Clean step aborted: raw_news table is empty. "
             "Please run 'python main.py fetch ...' first."
         )
-        logger.warning("Clean step aborted: raw_news table is empty.")
         return
 
     logger.info(f"Processing {len(raw_records)} raw records...")
