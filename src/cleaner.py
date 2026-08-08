@@ -35,7 +35,7 @@ from email.utils import parsedate_to_datetime
 from newspaper import Article
 from newspaper.article import ArticleException
 
-from .database import get_raw_news, save_clean_news
+from .database import get_raw_news, save_clean_news, get_existing_clean_guids
 
 logger = logging.getLogger(__name__)
 
@@ -192,10 +192,20 @@ def clean_news(args):
 
     logger.info(f"Processing {len(raw_records)} raw records...")
 
+    existing_guids = set()
+    if policy == "skip":
+        existing_guids = get_existing_clean_guids()
+
     cleaned = []
     skipped = 0
 
     for raw in raw_records:
+        guid = raw.get("unique_guid") or raw.get("url", "").strip()
+        if policy == "skip" and guid in existing_guids:
+            logger.info(f"Skipping article processing (already in clean storage): {guid}")
+            skipped += 1
+            continue
+
         result = _clean_record(raw)
         if result:
             cleaned.append(result)
@@ -203,11 +213,9 @@ def clean_news(args):
             skipped += 1
 
     if not cleaned:
-        print(
-            "[WARNING] No records passed validation. "
-            "Nothing was saved to clean storage."
-        )
-        logger.warning("Clean step: all records failed validation.")
+        if skipped > 0:
+            print(f"[INFO] All {skipped} record(s) were already present in clean storage or skipped.")
+        logger.warning("Clean step: no new valid records to save to clean storage.")
         return
 
     save_clean_news(cleaned, policy=policy)
@@ -217,4 +225,3 @@ def clean_news(args):
         f"(policy={policy}), {skipped} skipped."
     )
     logger.info(f"Clean step completed: {summary}")
-    print(f"[INFO] Clean completed: {summary}")

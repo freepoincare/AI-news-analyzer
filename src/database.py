@@ -107,7 +107,8 @@ def initialize_database():
         )
         connection.commit()
 
-        # Todo: check why this is needed.
+        # Migration guard: 'sentiment' was added after initial release.
+        # Users with an existing DB file won't have this column until ALTER TABLE runs.
         # --- migrate: add sentiment column if missing (for existing DBs) ---
         cols = {
             row[1]
@@ -315,6 +316,13 @@ def save_insight(analyzed_at, article_count, result_text,
         connection.commit()
         insight_id = cursor.lastrowid   # returns the ID of the newly inserted insight
     return insight_id
+
+
+def get_existing_clean_guids():
+    """Return a set of all unique_guid values currently in the clean_news table."""
+    with get_connection() as connection:
+        rows = connection.execute("SELECT unique_guid FROM clean_news WHERE unique_guid IS NOT NULL AND unique_guid != ''").fetchall()
+        return {row[0] for row in rows}
 
 
 def get_raw_news():
