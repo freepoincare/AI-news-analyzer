@@ -21,6 +21,7 @@ from pathlib import Path
 
 from .database import get_report_stats, get_latest_insight, get_sentiment_stats
 from .visualizer import generate_charts
+from .utils import format_date_only, format_datetime_utc
 
 logger = logging.getLogger(__name__)
 
@@ -70,13 +71,17 @@ def _build_report_lines(stats, chart_paths, insight, category=None, date_from=No
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = []
 
+    # Format dates to YYYY-MM-DD only
+    d_from = format_date_only(date_from)
+    d_to = format_date_only(date_to)
+
     # Period display
-    if date_from and date_to:
-        period_str = f"{date_from} ~ {date_to}"
-    elif date_from:
-        period_str = f"From {date_from}"
-    elif date_to:
-        period_str = f"Until {date_to}"
+    if d_from and d_to:
+        period_str = f"{d_from} ~ {d_to}"
+    elif d_from:
+        period_str = f"From {d_from}"
+    elif d_to:
+        period_str = f"Until {d_to}"
     else:
         period_str = "All available data"
 
@@ -145,11 +150,14 @@ def _build_report_lines(stats, chart_paths, insight, category=None, date_from=No
     # --- AI Insight ---
     lines.append("[ AI INSIGHT ANALYSIS ]")
     if insight:
+        analyzed_at_str = format_datetime_utc(insight.get('analyzed_at'))
+        insight_from = format_date_only(insight.get('date_from')) or 'N/A'
+        insight_to = format_date_only(insight.get('date_to')) or 'N/A'
         lines += [
-            f"  Analyzed at    : {insight.get('analyzed_at', 'N/A')}",
+            f"  Analyzed at    : {analyzed_at_str}",
             f"  Articles used  : {insight.get('article_count', 'N/A')}",
             f"  Category filter: {insight.get('category') or 'all'}",
-            f"  Date range     : {insight.get('date_from') or 'N/A'} ~ {insight.get('date_to') or 'N/A'}",
+            f"  Date range     : {insight_from} ~ {insight_to}",
             "",
         ]
         lines += insight["result_text"].splitlines()
@@ -168,13 +176,17 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = []
 
+    # Format dates to YYYY-MM-DD only
+    d_from = format_date_only(date_from)
+    d_to = format_date_only(date_to)
+
     # Period display
-    if date_from and date_to:
-        period_str = f"{date_from} ~ {date_to}"
-    elif date_from:
-        period_str = f"From {date_from}"
-    elif date_to:
-        period_str = f"Until {date_to}"
+    if d_from and d_to:
+        period_str = f"{d_from} ~ {d_to}"
+    elif d_from:
+        period_str = f"From {d_from}"
+    elif d_to:
+        period_str = f"Until {d_to}"
     else:
         period_str = "All available data"
 
@@ -184,9 +196,9 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     lines += [
         "# AI News Analyzer - Analysis Report",
         "",
+        f"* Generated: {now}",
         f"* Period: {period_str}",
         f"* Category: {category_str}",
-        f"* Generated: {now}",
         "",
         "---",
         "",
@@ -280,11 +292,14 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     # --- AI Insight ---
     lines += ["## AI Insight Analysis", ""]
     if insight:
+        analyzed_at_str = format_datetime_utc(insight.get('analyzed_at'))
+        insight_from = format_date_only(insight.get('date_from')) or 'N/A'
+        insight_to = format_date_only(insight.get('date_to')) or 'N/A'
         lines += [
-            f"- Analyzed at: {insight.get('analyzed_at', 'N/A')}",
+            f"- Analyzed at: {analyzed_at_str}",
             f"- Articles used: {insight.get('article_count', 'N/A')}",
             f"- Category filter: {insight.get('category') or 'all'}",
-            f"- Date range: {insight.get('date_from') or 'N/A'} ~ {insight.get('date_to') or 'N/A'}",
+            f"- Date range: {insight_from} ~ {insight_to}",
             "",
         ]
         lines += insight["result_text"].splitlines()

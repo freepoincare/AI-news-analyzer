@@ -159,12 +159,11 @@ def export_news(args):
             + (f" with status='{status}'" if status != "all" else "")
             + ". Nothing to export."
         )
-        print(f"[WARNING] {msg}")
         logger.warning(f"export: {msg}")
         return
 
-    print(f"[INFO] Exporting {len(records)} article(s) "
-          f"(status={status}) as {fmt.upper()}...")
+    logger.info(f"export: Exporting {len(records)} article(s) "
+                f"(status={status}) as {fmt.upper()}...")
 
     # --- Build output file path ---
     EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -180,8 +179,7 @@ def export_news(args):
     elif fmt == "xlsx":
         export_to_excel(records, out_path)
     else:
-        print(f"[ERROR] Unsupported format: {fmt}")
         logger.error(f"export: unsupported format '{fmt}'")
         return
 
-    print(f"[INFO] Export complete: {out_path}")
+    logger.info(f"export: Export complete: {out_path}")

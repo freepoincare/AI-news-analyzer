@@ -108,7 +108,7 @@ def _require_clean_data(records, command_name):
         False — no records; caller should return immediately.
     """
     if not records:
-        logger.error(
+        logger.warning(
             f"'{command_name}' aborted: no clean data found for such option(s). "
             f"You might need to run 'python main.py clean' before running '{command_name}' "
             "or use other options. "
@@ -261,7 +261,7 @@ def analyze_news(args):
     clean records exist for the given filters.
 
       - Filters by date range and/or category.
-      - Sends combined article text to the Gemini API.
+      - Sends combined article text (already summarized article) to the Gemini API.
       - Analysis covers at least 4 items: Key Trends, Core Keywords,
         Commonalities / Differences, Implications.
       - Persists the result to the insights table for later report use.
@@ -271,13 +271,15 @@ def analyze_news(args):
         category=args.category,
         date_from=args.date_from,
         date_to=args.date_to,
+        status="summarized",
+        order_by="published_at ASC"
     )
 
     # --- pipeline guard: refuse to proceed without clean data ---
     if not records:
-        logger.error(
+        logger.warning(
             f"'analyze' aborted: no clean data found for such criteria. "
-            f"You might need to run 'python main.py clean' before running 'analyze' "
+            f"You might need to run 'python main.py summarize' before running 'analyze' "
             "or use different criteria. "
         )
         return
@@ -289,12 +291,12 @@ def analyze_news(args):
     # --- build combined article text for the prompt ---
     article_blocks = []
     for idx, record in enumerate(records, start=1):
-        text = record["content"] if record["content"] else record["snippet"]
+        text = record["summary"] if record["summary"] else record["snippet"]
         block = (
             f"[Article: {idx}]\n"
             f"Title: {record['title']}\n"
             f"Date: {record.get('published_at', 'Unknown')}\n"
-            f"Content: {text[:800] if text else '(No content)'}"
+            f"Summary: {text if text else '(No content)'}"
         )
         article_blocks.append(block)
 
@@ -328,11 +330,11 @@ def analyze_news(args):
     logger.info("Analysis completed.")
 
     # --- console output ---
-    print("=" * 40)
-    print("  AI Insight Analysis Results")
-    print("=" * 40)
+    print("=" * 80)
+    print(" AI Insight Analysis Results")
+    print("=" * 80)
     print(result_text)
-    print("=" * 40)
+    print("=" * 80)
 
     # --- persist to insights table ---
     analyzed_at = datetime.now(timezone.utc).isoformat()
@@ -345,11 +347,4 @@ def analyze_news(args):
         date_to=getattr(args, "date_to", None),
     )
 
-    logger.info(
-        f"analyze finished: insight saved (id={insight_id}), "
-        f"category={getattr(args, 'category', None)}, "
-        f"date_from={getattr(args, 'date_from', None)}, "
-        f"date_to={getattr(args, 'date_to', None)}, "
-        f"articles={total}."
-    )
-    print(f"\n[INFO] Analysis results have been saved. (insight id={insight_id})")
+    logger.info(f"Analysis results have been saved. (insight id={insight_id})")
