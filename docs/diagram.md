@@ -40,7 +40,7 @@ flowchart TD
         O1["output/reports/\nreport_*.txt\nreport_*.md"]
         O2["output/charts/\nchart_*.png"]
         O3["output/exports/\n*.csv / *.json"]
-        O4["logs/\napp.log"]
+        O4["logs/\nnews_pipeline.log"]
     end
 
     CLI --> CMD
