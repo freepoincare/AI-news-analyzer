@@ -19,7 +19,7 @@ from enum import Enum
 from pydantic import BaseModel
 
 from .config import GEMINI_MODEL, validate_gemini_key
-from .database import get_clean_news, update_clean_status, save_insight
+from .database import get_clean_news, update_clean_status, save_insight, get_matching_insight
 
 logger = logging.getLogger(__name__)
 
@@ -267,6 +267,24 @@ def analyze_news(args):
       - Persists the result to the insights table for later report use.
       - Prints the structured result to the console.
     """
+    # --- duplicate-scope guard: skip if an insight for this scope already exists ---
+    existing = get_matching_insight(
+        category=getattr(args, "category", None),
+        date_from=getattr(args, "date_from", None),
+        date_to=getattr(args, "date_to", None),
+    )
+    if existing:
+        from .utils import format_date_only
+        d_from = format_date_only(existing.get("date_from")) or "N/A"
+        d_to   = format_date_only(existing.get("date_to"))   or "N/A"
+        logger.warning(
+            f"'analyze' skipped: an AI insight for the same scope already exists "
+            f"(id={existing['id']}, category={existing.get('category') or 'all'}, "
+            f"period={d_from}~{d_to}, analyzed_at={existing['analyzed_at']}). "
+            "Run 'python main.py report' with the same scope to view it, or delete the existing insight to re-analyze."
+        )
+        return
+
     records = get_clean_news(
         category=args.category,
         date_from=args.date_from,
