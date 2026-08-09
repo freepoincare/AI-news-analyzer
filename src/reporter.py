@@ -66,8 +66,12 @@ def _top_sources_block(stats, n=5):
 
 
 # Plain-text report assembly
-def _build_report_lines(stats, chart_paths, insight, category=None, date_from=None, date_to=None):
-    """Assemble the full report as a list of plain-text lines."""
+def _build_report_lines(stats, combined_chart, insight, category=None, date_from=None, date_to=None):
+    """Assemble the full report as a list of plain-text lines.
+
+    Args:
+        combined_chart: Path to the single combined chart PNG (or None).
+    """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = []
 
@@ -127,24 +131,12 @@ def _build_report_lines(stats, chart_paths, insight, category=None, date_from=No
             lines.append(f"  {sent:<20} {cnt} articles")
         lines.append("")
 
-    # --- Chart references ---
+    # --- Chart reference (single combined image) ---
     lines.append("[ CHARTS ]")
-    if chart_paths.get("category_chart"):
-        lines.append(f"  Category distribution     : {chart_paths['category_chart']}")
+    if combined_chart:
+        lines.append(f"  Combined chart (2x2)      : {combined_chart}")
     else:
-        lines.append("  Category distribution     : (not generated — no data)")
-    if chart_paths.get("daily_chart"):
-        lines.append(f"  Daily trend               : {chart_paths['daily_chart']}")
-    else:
-        lines.append("  Daily trend               : (not generated — no data)")
-    if chart_paths.get("sentiment_over_time_chart"):
-        lines.append(f"  Sentiment over time       : {chart_paths['sentiment_over_time_chart']}")
-    else:
-        lines.append("  Sentiment over time       : (not generated — no data)")
-    if chart_paths.get("sentiment_by_category_chart"):
-        lines.append(f"  Sentiment by category     : {chart_paths['sentiment_by_category_chart']}")
-    else:
-        lines.append("  Sentiment by category     : (not generated — filtered or no data)")
+        lines.append("  Combined chart            : (not generated — no data)")
     lines.append("")
 
     # --- AI Insight ---
@@ -171,8 +163,12 @@ def _build_report_lines(stats, chart_paths, insight, category=None, date_from=No
 
 
 # Markdown report assembly with tables and image embeds
-def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=None, date_to=None):
-    """Assemble the full report as markdown lines."""
+def _build_markdown_lines(stats, combined_chart, insight, category=None, date_from=None, date_to=None):
+    """Assemble the full report as markdown lines.
+
+    Args:
+        combined_chart: Path to the single combined chart PNG (or None).
+    """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = []
 
@@ -237,7 +233,7 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     sources = stats["top_sources"][:5]
     if sources:
         lines.append("| Rank | Source | Articles |")
-        lines.append("|------|--------|----------|")
+        lines.append("|------|--------|----------|")        
         for rank, (src, cnt) in enumerate(sources, start=1):
             lines.append(f"| {rank} | {src} | {cnt} |")
     else:
@@ -248,7 +244,7 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     if stats["category_counts"]:
         lines += ["## Category Distribution", ""]
         lines.append("| Category | Articles |")
-        lines.append("|----------|----------|")
+        lines.append("|----------|----------|")        
         for cat, cnt in stats["category_counts"]:
             lines.append(f"| {cat} | {cnt} |")
         lines.append("")
@@ -257,36 +253,18 @@ def _build_markdown_lines(stats, chart_paths, insight, category=None, date_from=
     if stats.get("sentiment_counts"):
         lines += ["## Sentiment Distribution", ""]
         lines.append("| Sentiment | Articles |")
-        lines.append("|-----------|----------|")
+        lines.append("|-----------|----------|")        
         for sent, cnt in stats["sentiment_counts"]:
             lines.append(f"| {sent} | {cnt} |")
         lines.append("")
 
-    # --- Charts ---
+    # --- Charts (single combined 2x2 image) ---
     lines += ["## Charts", ""]
-    if chart_paths.get("category_chart"):
-        chart_name = Path(chart_paths["category_chart"]).name
-        lines.append(f"![Category Distribution](../charts/{chart_name})")
+    if combined_chart:
+        chart_name = Path(combined_chart).name
+        lines.append(f"![AI News Analyzer Charts](../charts/{chart_name})")
     else:
-        lines.append("_Category distribution chart not generated (no data)._")
-    lines.append("")
-    if chart_paths.get("daily_chart"):
-        chart_name = Path(chart_paths["daily_chart"]).name
-        lines.append(f"![Daily Trend](../charts/{chart_name})")
-    else:
-        lines.append("_Daily trend chart not generated (no data)._")
-    lines.append("")
-    if chart_paths.get("sentiment_over_time_chart"):
-        chart_name = Path(chart_paths["sentiment_over_time_chart"]).name
-        lines.append(f"![Sentiment Over Time](../charts/{chart_name})")
-    else:
-        lines.append("_Sentiment over time chart not generated (no data)._")
-    lines.append("")
-    if chart_paths.get("sentiment_by_category_chart"):
-        chart_name = Path(chart_paths["sentiment_by_category_chart"]).name
-        lines.append(f"![Sentiment By Category](../charts/{chart_name})")
-    elif not category:
-        lines.append("_Sentiment by category chart not generated (no data)._")
+        lines.append("_Charts not generated (no data)._")
     lines.append("")
 
     # --- AI Insight ---
@@ -340,17 +318,16 @@ def generate_report(args):
     sentiment_stats = get_sentiment_stats(category=category, date_from=date_from, date_to=date_to)
     stats.update(sentiment_stats)
 
-    logger.info("Generating charts...")
-    chart_paths = generate_charts(stats, category=category)
+    # Generate a single timestamp shared by both the report file and the chart image.
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    if chart_paths["category_chart"]:
-        logger.info(f"Category chart saved: {chart_paths['category_chart']}")
-    if chart_paths["daily_chart"]:
-        logger.info(f"Daily trend chart saved: {chart_paths['daily_chart']}")
-    if chart_paths.get("sentiment_over_time_chart"):
-        logger.info(f"Sentiment over time chart saved: {chart_paths['sentiment_over_time_chart']}")
-    if chart_paths.get("sentiment_by_category_chart"):
-        logger.info(f"Sentiment by category chart saved: {chart_paths['sentiment_by_category_chart']}")
+    logger.info("Generating charts...")
+    combined_chart = generate_charts(stats, category=category, timestamp=timestamp)
+
+    if combined_chart:
+        logger.info(f"Combined chart saved: {combined_chart}")
+    else:
+        logger.warning("No chart was generated (no data).")
 
     logger.info("Loading matching AI insight for requested scope...")
     insight = get_matching_insight(category=category, date_from=date_from, date_to=date_to)
@@ -366,7 +343,7 @@ def generate_report(args):
         if scope_parts:
             scope_str = " with " + " and ".join(scope_parts)
         else:
-            scope_str = " without category or period filters"
+            scope_str = " with matching category or period filters"
 
         logger.error(
             f"No AI insight found matching the requested scope ({scope_str.strip()}). "
@@ -376,10 +353,10 @@ def generate_report(args):
 
     # --- Build report content ---
     if fmt == "md":
-        lines = _build_markdown_lines(stats, chart_paths, insight, category=category, date_from=date_from, date_to=date_to)
+        lines = _build_markdown_lines(stats, combined_chart, insight, category=category, date_from=date_from, date_to=date_to)
         ext = "md"
     else:
-        lines = _build_report_lines(stats, chart_paths, insight, category=category, date_from=date_from, date_to=date_to)
+        lines = _build_report_lines(stats, combined_chart, insight, category=category, date_from=date_from, date_to=date_to)
         ext = "txt"
 
     report_text = "\n".join(lines)
@@ -391,7 +368,6 @@ def generate_report(args):
 
     # --- Save to file ---
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = REPORTS_DIR / f"report_{timestamp}.{ext}"
     out_path.write_text(report_text, encoding="utf-8")
 
