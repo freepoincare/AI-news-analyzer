@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from logging.handlers import RotatingFileHandler
 
 
 def setup_logging(config):
@@ -24,8 +25,10 @@ def setup_logging(config):
     console_handler.setFormatter(formatter)
 
     # Save logs to the log file
-    file_handler = logging.FileHandler(
+    file_handler = RotatingFileHandler(
         log_file,
+        maxBytes=5*1024*1024,   # ~5 MB per log file
+        backupCount=3,          # Keep 3 backup log files
         encoding="utf-8"
     )
     file_handler.setFormatter(formatter)
