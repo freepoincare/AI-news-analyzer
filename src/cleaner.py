@@ -234,7 +234,7 @@ def clean_news(args):
 
     policy = args.policy  # 'skip' or 'upsert', validated by argparse
 
-    logger.info(f"Clean step started (policy={policy}).")
+    logger.info(f"Clean step started: policy={policy}")
 
     raw_records = get_raw_news()
     if not raw_records:
@@ -268,7 +268,7 @@ def clean_news(args):
 
     if not cleaned:
         if skipped > 0:
-            print(f"[INFO] All {skipped} record(s) were already present in clean storage or skipped.")
+            logger.info(f"All {skipped} record(s) were already present in clean storage or skipped.")
         logger.warning("Clean step: no new valid records to save to clean storage.")
         return
 

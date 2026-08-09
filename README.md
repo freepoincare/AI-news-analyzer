@@ -211,6 +211,8 @@ python main.py report [--category technology] [--date-from 2026-08-01] [--date-t
 python main.py report --format txt
 ```
 * `--category`, `--date-from`, and `--date-to` are optional.
+* Must have cleaned data to generate report (`summarize` and `analyze` are not necessary)
+* To generate a report for a specific category and period, the AI insight analysis should already exist with the same scope.
 
 ### 6. Export Clean Data (`export`)
 ```bash

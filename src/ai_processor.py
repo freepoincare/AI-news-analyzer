@@ -365,4 +365,4 @@ def analyze_news(args):
         date_to=getattr(args, "date_to", None),
     )
 
-    logger.info(f"Analysis results have been saved. (insight id={insight_id})")
+    logger.info(f"Analysis results have been saved: insight id={insight_id}")
