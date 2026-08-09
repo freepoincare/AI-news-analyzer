@@ -294,19 +294,11 @@ def update_clean_status(article_id, summary, status="summarized", sentiment=None
 
 def save_insight(analyzed_at, article_count, result_text,
                  category=None, date_from=None, date_to=None):
-    """Persist an AI insight-analysis result to the insights table.
+    """Persist an AI insight-analysis result to the insights table."""
+    from .utils import format_date_only
+    d_from_str = format_date_only(date_from)
+    d_to_str = format_date_only(date_to)
 
-    Args:
-        analyzed_at:   ISO-format timestamp of when the analysis ran.
-        article_count: Number of articles that were analysed.
-        result_text:   The full AI-generated analysis text.
-        category:      Category filter used for this analysis (or None).
-        date_from:     Start of the date range filter (or None).
-        date_to:       End of the date range filter (or None).
-
-    Returns:
-        The row id of the newly inserted insight record.
-    """
     with get_connection() as connection:
         cursor = connection.execute(
             """
@@ -320,7 +312,7 @@ def save_insight(analyzed_at, article_count, result_text,
             )
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (analyzed_at, category, date_from, date_to, article_count, result_text),
+            (analyzed_at, category, d_from_str, d_to_str, article_count, result_text),
         )
         connection.commit()
         insight_id = cursor.lastrowid   # returns the ID of the newly inserted insight
@@ -360,6 +352,10 @@ def get_clean_news(*, article_id=None, status=None, category=None,
         limit:          Maximum number of records to return.
         offset:         Number of records to skip.
     """
+    from .utils import format_date_only
+    d_from_str = format_date_only(date_from)
+    d_to_str = format_date_only(date_to)
+
     conditions = []     # collect WHERE condition
     params = []         # collect corresponding values using ? placeholder to avoid SQL injection
 
@@ -372,12 +368,12 @@ def get_clean_news(*, article_id=None, status=None, category=None,
     if category:
         conditions.append("category = ?")
         params.append(category)
-    if date_from:
+    if d_from_str:
         conditions.append("published_at >= ?")
-        params.append(date_from)
-    if date_to:
+        params.append(d_from_str)
+    if d_to_str:
         conditions.append("published_at <= ?")
-        params.append(date_to)
+        params.append(d_to_str)
     if content_source:
         if isinstance(content_source, (list, tuple, set)):
             placeholders = ", ".join(["?"] * len(content_source))
@@ -404,6 +400,10 @@ def get_clean_news(*, article_id=None, status=None, category=None,
 
 def get_clean_news_count(*, category=None, date_from=None, date_to=None, keyword=None, status=None):
     """Get total count of clean_news records matching filters."""
+    from .utils import format_date_only
+    d_from_str = format_date_only(date_from)
+    d_to_str = format_date_only(date_to)
+
     conditions = []
     params = []
 
@@ -413,12 +413,12 @@ def get_clean_news_count(*, category=None, date_from=None, date_to=None, keyword
     if category:
         conditions.append("category = ?")
         params.append(category)
-    if date_from:
+    if d_from_str:
         conditions.append("published_at >= ?")
-        params.append(date_from)
-    if date_to:
+        params.append(d_from_str)
+    if d_to_str:
         conditions.append("published_at <= ?")
-        params.append(date_to)
+        params.append(d_to_str)
     if keyword:
         conditions.append("(title LIKE ? OR snippet LIKE ? OR content LIKE ?)")
         kw_pattern = f"%{keyword}%"
@@ -435,6 +435,10 @@ def get_clean_news_count(*, category=None, date_from=None, date_to=None, keyword
 # fetches the most recent AI analysis result matching exact scope (category, date_from, date_to)
 def get_matching_insight(category=None, date_from=None, date_to=None):
     """Return the most recently saved insight record matching the exact scope, or None."""
+    from .utils import format_date_only
+    d_from_str = format_date_only(date_from)
+    d_to_str = format_date_only(date_to)
+
     conditions = []
     params = []
 
@@ -444,15 +448,15 @@ def get_matching_insight(category=None, date_from=None, date_to=None):
     else:
         conditions.append("(category IS NULL OR category = '')")
 
-    if date_from is not None:
+    if d_from_str is not None:
         conditions.append("date_from = ?")
-        params.append(date_from)
+        params.append(d_from_str)
     else:
         conditions.append("(date_from IS NULL OR date_from = '')")
 
-    if date_to is not None:
+    if d_to_str is not None:
         conditions.append("date_to = ?")
-        params.append(date_to)
+        params.append(d_to_str)
     else:
         conditions.append("(date_to IS NULL OR date_to = '')")
 
@@ -630,18 +634,22 @@ def get_sentiment_stats(category=None, date_from=None, date_to=None):
             - sentiment_over_time: list of dicts with 'date' and counts for 'positive', 'neutral', 'negative', 'none' (or unclassified)
             - sentiment_by_category: list of dicts with 'category' and counts for 'positive', 'neutral', 'negative', 'none'
     """
+    from .utils import format_date_only
+    d_from_str = format_date_only(date_from)
+    d_to_str = format_date_only(date_to)
+
     conditions = []
     params = []
 
     if category:
         conditions.append("category = ?")
         params.append(category)
-    if date_from:
+    if d_from_str:
         conditions.append("published_at >= ?")
-        params.append(date_from)
-    if date_to:
+        params.append(d_from_str)
+    if d_to_str:
         conditions.append("published_at <= ?")
-        params.append(date_to)
+        params.append(d_to_str)
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
