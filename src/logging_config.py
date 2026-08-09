@@ -24,7 +24,7 @@ def setup_logging(config):
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
 
-    # Save logs to the log file
+    # Save logs to a rotating log file
     file_handler = RotatingFileHandler(
         log_file,
         maxBytes=5*1024*1024,   # ~5 MB per log file
@@ -34,13 +34,13 @@ def setup_logging(config):
     file_handler.setFormatter(formatter)
 
     # Configure the root logger
-    logging.basicConfig(
-        level=log_level,
-        handlers=[
-            console_handler,
-            file_handler,
-        ],
-    )
+    root_logger = logging.getLogger()  # Get the root logger
+    root_logger.setLevel(log_level)    # Set the log level for the root logger
+
+    # Avoid adding duplicate handlers if setup_logging() is called again
+    if not root_logger.handlers:
+        root_logger.addHandler(console_handler)
+        root_logger.addHandler(file_handler)
 
     # --- Silence third-party library logs ---
     logging.getLogger("google_genai").setLevel(logging.WARNING)
