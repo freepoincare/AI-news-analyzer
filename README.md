@@ -292,43 +292,43 @@ After running pipeline commands, output files are organized as follows:
 ```
 
 <details>
-<summary>[Program Flow & Error Handling (KO)]</summary>
+<summary>[Program Flow & Error Handling]</summary>
 <br>
 
 ```text
 ╔══════════════════════════════════════════════════════════════════════════╗
-            🤖 AI News Analyzer - Program Flow & Error Handling            
+            🤖 AI News Analyzer - Program Flow & Error Handling
 ╚══════════════════════════════════════════════════════════════════════════╝
 
 ┌──────────────────────────────────────────────────────────────────────────┐
-   🖥️  main.py  ──  CLI Entry Point                                        
-                                                                           
-   ⚙️ config.py           YAML 설정 로드                                    
-   📋 logging_config.py   로그 핸들러 설정                                   
-   🔧 utils.py            날짜 검증 / 포맷 헬퍼                              
-                                                                          
-   ❌ FileNotFoundError   → config 파일 없음  → 🛑 즉시 종료                 
-   ❌ ValueError          → 날짜 형식 오류    → 🛑 즉시 종료                  
-   ❌ ValueError          → 미래 날짜 입력    → 🛑 즉시 종료                  
+   🖥️  main.py  ──  CLI Entry Point
+
+   ⚙️ config.py           Load config.json
+   📋 logging_config.py   Configure log handlers
+   🔧 utils.py            Date validation / format helpers
+
+   ❌ FileNotFoundError   → config file missing  → 🛑 Immediate exit
+   ❌ ValueError          → Invalid date format  → 🛑 Immediate exit
+   ❌ ValueError          → Future date input    → 🛑 Immediate exit
 └───────────────────────────────────┬──────────────────────────────────────┘
                                     │
                     ┌───────────────▼─────────────────┐
-                           📂 Subcommand Router      
+                           📂 Subcommand Router
                     └──┬──────┬──────┬──────┬──────┬──┘
                        │      │      │      │      │
 ───────────────────────▼──────▼──────▼──────▼──────▼────────────────────────
 
     📡 COLLECT          🧹 CLEAN         📝 SUMMARIZE       🤖 ANALYZE
-    ──────────          ────────          ────────────       ──────────
-    RSS / API           중복 제거          Gemini API         Gemini API
-    뉴스 수집            데이터 정제         AI 요약 생성        인사이트 분석
+    ──────────          ───────────      ────────────        ──────────
+    RSS / API           Deduplication    Gemini API          Gemini API
+    News fetching       Data cleaning    AI summary          Insight analysis
 
-    ❌ ConnectionError ❌ ValueError    ❌ APIError       ❌ APIError
-    → 재시도 후 스킵      → 해당 항목 스킵   → 재시도 후 스킵     → 재시도 후 스킵
-    ❌ Timeout         ❌ DB Error      ❌ Timeout        ❌ Timeout
-    → 경고 로그 기록      → 🛑 즉시 종료    → 경고 로그 기록     → 경고 로그 기록
+    ❌ ConnectionError  ❌ ValueError   ❌ APIError        ❌ APIError
+    → Retry then skip    → Skip item     → Retry then skip   → Retry then skip
+    ❌ Timeout          ❌ DB Error     ❌ Timeout         ❌ Timeout
+    → Log warning        → 🛑 Exit       → Log warning      → Log warning
     ❌ ParseError                       ❌ QuotaExceeded   ❌ QuotaExceeded
-    → 해당 항목 스킵                       → 🛑 즉시 종료      → 🛑 즉시 종료
+    → Skip item                          → 🛑 Exit          → 🛑 Exit
 
 ───────────────────────────────────────────────────────────────────────────
                │              │              │               │
@@ -336,23 +336,23 @@ After running pipeline commands, output files are organized as follows:
                                       │
                                       ▼
                        ┌──────────────────────────┐
-                          🗄️  database.py         
-                          
-                          SQLite                  
-                          · raw_news              
-                          · clean_news             
-                          · insights              
-                                                 
-                          ❌ OperationalError      
-                          → 🛑 즉시 종료           
-                          ❌ IntegrityError        
-                          → 중복 항목 스킵         
-                          ❌ DatabaseError         
-                          → 경고 로그 후 재시도    
+                          🗄️  database.py
+
+                          SQLite
+                          · raw_news
+                          · clean_news
+                          · insights
+
+                          ❌ OperationalError
+                          → 🛑 Immediate exit
+                          ❌ IntegrityError
+                          → Skip duplicate item
+                          ❌ DatabaseError
+                          → Log warning then retry
                        └──────────────┬───────────┘
                                       │
             ┌─────────────────────────▼──────────────────────┐
-                           📂 Subcommand Router              
+                           📂 Subcommand Router
             └──────────────────────┬─────────────────────────┘
                                    │
                       ┌────────────┴────────────┐
@@ -361,35 +361,35 @@ After running pipeline commands, output files are organized as follows:
 
         📤 EXPORT                        📊 REPORT
         ────────────────────────         ────────────────────────
-        CSV / JSON 파일 내보내기           reporter.py
-                                          · DB 통계 집계
-        ❌ PermissionError               · 텍스트 / 마크다운 생성
-        → 🛑 즉시 종료
-        ❌ OSError                       ❌ ZeroDivisionError (데이터 없음)
-        → 🛑 즉시 종료                     → 빈 보고서 생성 후 경고
-        ❌ 데이터 없음                    ❌ PermissionError
-        → 경고 메시지 출력                  → 🛑 즉시 종료
-                                                  │
-                                        ──────────▼──────────────
-                                        📈 visualizer.py
-                                        matplotlib 2×2 그리드
-                                        · 카테고리 분포      (bar)
-                                        · 일별 수집 추이     (line)
-                                        · 감정 시계열        (area/bar)
-                                        · 카테고리별 감성    (bar) ¹
+        Export to CSV / JSONL / XLSX     reporter.py
+                                         · Aggregate DB statistics
+        ❌ PermissionError               · Generate TXT / Markdown
+        → 🛑 Immediate exit
+        ❌ OSError                       ❌ ZeroDivisionError (no data)
+        → 🛑 Immediate exit              → Generate empty report + warning
+        ❌ No data found                 ❌ PermissionError
+        → Print warning message           → 🛑 Immediate exit
+                                                 │
+                                         ────────▼────────────────
+                                         📈 visualizer.py
+                                         matplotlib 2×2 grid
+                                         · Category distribution  (bar)
+                                         · Daily collection trend (line)
+                                         · Sentiment over time    (area/bar)
+                                         · Sentiment by category  (bar) ¹
 
-                                        ❌ 데이터 부족
-                                        → 해당 차트 빈 상태로 스킵
-                                        ❌ OSError (저장 실패)
-                                        → 경고 로그 후 계속 진행
-                                        ─────────────────────────
+                                         ❌ Insufficient data
+                                         → Skip chart, leave blank
+                                         ❌ OSError (save failure)
+                                         → Log warning then continue
+                                         ─────────────────────────
                       │                         │
     ──────────────────▼──────────    ───────────▼──────────────────────────
 
     📁 output/exports/               📁 output/reports/
     ─────────────────                ─────────────────
     · export_*.csv                   · report_*.txt
-    · export_*.json                  · report_*.md
+    · export_*.jsonl                 · report_*.md
     · export_*.xlsx
                                      📁 output/charts/
                                      ────────────────
@@ -397,16 +397,17 @@ After running pipeline commands, output files are organized as follows:
 
     ───────────────────────────────────────────────────────────────────────
 
-    📁 logs/news_pipeline.log  ◄──── 모든 서브커맨드 공통 / 에러 및 경고 전체 기록
+    📁 logs/news_pipeline.log  ◄──── Shared across all subcommands
+                                     Records all errors and warnings
 
 ══════════════════════════════════════════════════════════════════════════
 
-  범례
-  ────
-  ❌ 에러 / 예외 발생 지점
-  🛑 즉시 종료 (sys.exit / raise)
-  →  처리 방향
-  ¹  category 필터 지정 시 카테고리별 감성 차트는 숨김 처리
+  Legend
+  ──────
+  ❌  Error / Exception point
+  🛑  Immediate exit (sys.exit / raise)
+  →   Processing direction
+  ¹   Sentiment by category chart is hidden when --category filter is set
 
 ══════════════════════════════════════════════════════════════════════════
 ```

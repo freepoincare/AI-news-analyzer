@@ -22,9 +22,6 @@ env/
 .DS_Store
 Thumbs.db
 
-# --- Project data ---
-# prompts.json
-
 # --- temporarily ignored ---
 archive/
 
