@@ -33,6 +33,26 @@ REPORTS_DIR = Path("output") / "reports"
 # Helpers
 # ---------------------------------------------------------------------------
 
+
+def _build_period_str(date_from, date_to):
+    # Format dates to YYYY-MM-DD only
+    d_from = format_date_only(date_from)
+    d_to   = format_date_only(date_to)
+
+    # Period display
+    if d_from and d_to:
+        return f"{d_from} ~ {d_to}"
+    if d_from:
+        return f"From {d_from}"
+    if d_to:
+        return f"Until {d_to}"
+    return "All available data"
+
+
+def _build_category_str(category):
+    return category.capitalize() if category else "All categories"
+
+
 def _quality_metrics(stats):
     """Return quality metric lines as a list of strings.
 
@@ -71,26 +91,15 @@ def _build_report_lines(stats, combined_chart, insight, category=None, date_from
 
     Args:
         combined_chart: Path to the single combined chart PNG (or None).
+        category: Article category filter (or None).
+        date_from: Start date of the analysis period (or None).
+        date_to: End date of the analysis period (or None).
     """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = []
 
-    # Format dates to YYYY-MM-DD only
-    d_from = format_date_only(date_from)
-    d_to = format_date_only(date_to)
-
-    # Period display
-    if d_from and d_to:
-        period_str = f"{d_from} ~ {d_to}"
-    elif d_from:
-        period_str = f"From {d_from}"
-    elif d_to:
-        period_str = f"Until {d_to}"
-    else:
-        period_str = "All available data"
-
-    # Category display
-    category_str = category.capitalize() if category else "All categories"
+    period_str = _build_period_str(date_from, date_to)
+    category_str = _build_category_str(category)
 
     lines += [
         "=" * 60,
@@ -168,26 +177,15 @@ def _build_markdown_lines(stats, combined_chart, insight, category=None, date_fr
 
     Args:
         combined_chart: Path to the single combined chart PNG (or None).
+        category: Article category filter (or None).
+        date_from: Start date of the analysis period (or None).
+        date_to: End date of the analysis period (or None).
     """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = []
 
-    # Format dates to YYYY-MM-DD only
-    d_from = format_date_only(date_from)
-    d_to = format_date_only(date_to)
-
-    # Period display
-    if d_from and d_to:
-        period_str = f"{d_from} ~ {d_to}"
-    elif d_from:
-        period_str = f"From {d_from}"
-    elif d_to:
-        period_str = f"Until {d_to}"
-    else:
-        period_str = "All available data"
-
-    # Category display
-    category_str = category.capitalize() if category else "All categories"
+    period_str = _build_period_str(date_from, date_to)
+    category_str = _build_category_str(category)
 
     lines += [
         "# AI News Analyzer - Analysis Report",

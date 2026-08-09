@@ -23,7 +23,7 @@ An automated, CLI-driven data pipeline that collects news from multiple sources,
 **AI News Analyzer** demonstrates an end-to-end data pipeline in Python:
 1. **Fetch**: Collects raw news articles via RSS feeds, NewsAPI, or web crawling.
 2. **Clean**: Normalizes text and dates, handles missing values, and enforces deduplication policies (`skip` / `upsert`).
-3. **Summarize**: Generates 3~5 sentence summaries per article using **Google Gemini 2.0 Flash**.
+3. **Summarize**: Generates 3~5 sentence summaries per article using **Google Gemini**.
 4. **Analyze**: Batch-analyzes filtered articles to produce structured trend insights (Key Trends, Core Keywords, Commonalities/Differences, Implications).
 5. **Report**: Aggregates dataset metrics, draws `matplotlib` charts, and compiles Markdown/TXT reports.
 6. **Export**: Exports dataset records to CSV, JSONL, or Excel formats.
@@ -97,10 +97,10 @@ cd ai-news-analyzer
 python -m venv .venv
 
 # 3. Activate the virtual environment
-# Windows (PowerShell):
-.venv\Scripts\Activate.ps1
 # macOS/Linux:
 source .venv/bin/activate
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
 
 # 4. Install dependencies
 pip install -r requirements.txt
@@ -137,15 +137,16 @@ brew install sqlite
 Get a free API key at [NewsAPI.org](https://newsapi.org).
 
 **Set environment variable:**
-- **Windows (PowerShell):** `$env:NEWS_API_KEY="your_newsapi_key_here"`
 - **macOS/Linux:** `export NEWS_API_KEY="your_newsapi_key_here"`
+- **Windows (PowerShell):** `$env:NEWS_API_KEY="your_newsapi_key_here"`
+
 
 ### 2. Gemini API Key (Required for `summarize` & `analyze`)
 Get an API key from [Google AI Studio](https://aistudio.google.com/).
 
 **Set environment variable:**
-- **Windows (PowerShell):** `$env:GEMINI_API_KEY="your_gemini_key_here"`
 - **macOS/Linux:** `export GEMINI_API_KEY="your_gemini_key_here"`
+- **Windows (PowerShell):** `$env:GEMINI_API_KEY="your_gemini_key_here"`
 
 ---
 
@@ -190,7 +191,7 @@ python main.py summarize --unsummarized --limit 5
 # Summarize a specific article by ID
 python main.py summarize --id 1
 
-# Summarize all clean articles
+# Summarize all clean & unsummarized articles
 python main.py summarize --all
 ```
 
@@ -203,7 +204,7 @@ python main.py analyze --category technology --date-from 2026-01-01 --date-to 20
 
 ### 5. Generate Report & Charts (`report`)
 ```bash
-# Generate a Markdown report (default) with embedded charts
+# Generate a Markdown (default) report with embedded charts
 python main.py report [--category technology] [--date-from 2026-08-01] [--date-to 2026-08-07]
 
 # Generate a plain text report
@@ -232,8 +233,8 @@ python main.py list --category technology --page 1 --page-size 10
 # Show full details of an article by ID
 python main.py show --id 5
 ```
-* filtering for `list`: use `--category`, `--date-from`, `--date-to`, `--keyword` options
-* pagination for `list`: use `--page` (default=1) & `--page-size` (default=10)
+* Filtering for `list`: use `--category`, `--date-from`, `--date-to`, `--keyword` options
+* Pagination for `list`: use `--page` (default=1) & `--page-size` (default=10)
 
 ---
 
@@ -245,12 +246,9 @@ After running pipeline commands, output files are organized as follows:
 |---|---|---|
 | **Database** | `data/news.db` | SQLite database storing `raw_news`, `clean_news`, and `insights`. |
 | **Logs** | `logs/news_pipeline.log` | Execution logs containing timestamps and log levels. |
-| **Charts** | `output/charts/category_dist.png` | Bar chart of clean articles per category. |
-| **Charts** | `output/charts/daily_trend.png` | Line chart of daily article collection counts. |
-| **Charts** | `output/charts/sentiment_over_time.png` | stacked area/bar chart of sentiment over time. |
-| **Charts** | `output/charts/sentiment_by_category.png` | stacked bar chart of sentiment by category. |
+| **Charts** | `output/charts/chart_YYYYMMDD_HHMMSS.png` | 3~4 charts into a single 2x2 grid image. |
 | **Reports** | `output/reports/report_YYYYMMDD_HHMMSS.md` | Comprehensive analysis report in Markdown format. |
-| **Exports** | `output/exports/news_status_YYYYMMDD_HHMMSS.csv` | Exported dataset files (CSV, JSONL, XLSX). |
+| **Exports** | `output/exports/export_status_YYYYMMDD_HHMMSS.csv` | Exported dataset files (CSV, JSONL, XLSX). |
 
 ---
 
@@ -292,6 +290,130 @@ After running pipeline commands, output files are organized as follows:
                        python main.py export
                     (Export CSV / JSONL / XLSX)
 ```
+
+<details>
+<summary>[Program Flow & Error Handling (KO)]</summary>
+<br>
+
+```text
+╔══════════════════════════════════════════════════════════════════════════╗
+            🤖 AI News Analyzer - Program Flow & Error Handling            
+╚══════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────┐
+   🖥️  main.py  ──  CLI Entry Point                                        
+                                                                           
+   ⚙️ config.py           YAML 설정 로드                                    
+   📋 logging_config.py   로그 핸들러 설정                                   
+   🔧 utils.py            날짜 검증 / 포맷 헬퍼                              
+                                                                          
+   ❌ FileNotFoundError   → config 파일 없음  → 🛑 즉시 종료                 
+   ❌ ValueError          → 날짜 형식 오류    → 🛑 즉시 종료                  
+   ❌ ValueError          → 미래 날짜 입력    → 🛑 즉시 종료                  
+└───────────────────────────────────┬──────────────────────────────────────┘
+                                    │
+                    ┌───────────────▼─────────────────┐
+                           📂 Subcommand Router      
+                    └──┬──────┬──────┬──────┬──────┬──┘
+                       │      │      │      │      │
+───────────────────────▼──────▼──────▼──────▼──────▼────────────────────────
+
+    📡 COLLECT          🧹 CLEAN         📝 SUMMARIZE       🤖 ANALYZE
+    ──────────          ────────          ────────────       ──────────
+    RSS / API           중복 제거          Gemini API         Gemini API
+    뉴스 수집            데이터 정제         AI 요약 생성        인사이트 분석
+
+    ❌ ConnectionError ❌ ValueError    ❌ APIError       ❌ APIError
+    → 재시도 후 스킵      → 해당 항목 스킵   → 재시도 후 스킵     → 재시도 후 스킵
+    ❌ Timeout         ❌ DB Error      ❌ Timeout        ❌ Timeout
+    → 경고 로그 기록      → 🛑 즉시 종료    → 경고 로그 기록     → 경고 로그 기록
+    ❌ ParseError                       ❌ QuotaExceeded   ❌ QuotaExceeded
+    → 해당 항목 스킵                       → 🛑 즉시 종료      → 🛑 즉시 종료
+
+───────────────────────────────────────────────────────────────────────────
+               │              │              │               │
+               └──────────────┴──────────────┴───────────────┘
+                                      │
+                                      ▼
+                       ┌──────────────────────────┐
+                          🗄️  database.py         
+                          
+                          SQLite                  
+                          · raw_news              
+                          · clean_news             
+                          · insights              
+                                                 
+                          ❌ OperationalError      
+                          → 🛑 즉시 종료           
+                          ❌ IntegrityError        
+                          → 중복 항목 스킵         
+                          ❌ DatabaseError         
+                          → 경고 로그 후 재시도    
+                       └──────────────┬───────────┘
+                                      │
+            ┌─────────────────────────▼──────────────────────┐
+                           📂 Subcommand Router              
+            └──────────────────────┬─────────────────────────┘
+                                   │
+                      ┌────────────┴────────────┐
+                      │                         │
+    ──────────────────▼──────────    ───────────▼──────────────────────────
+
+        📤 EXPORT                        📊 REPORT
+        ────────────────────────         ────────────────────────
+        CSV / JSON 파일 내보내기           reporter.py
+                                          · DB 통계 집계
+        ❌ PermissionError               · 텍스트 / 마크다운 생성
+        → 🛑 즉시 종료
+        ❌ OSError                       ❌ ZeroDivisionError (데이터 없음)
+        → 🛑 즉시 종료                     → 빈 보고서 생성 후 경고
+        ❌ 데이터 없음                    ❌ PermissionError
+        → 경고 메시지 출력                  → 🛑 즉시 종료
+                                                  │
+                                        ──────────▼──────────────
+                                        📈 visualizer.py
+                                        matplotlib 2×2 그리드
+                                        · 카테고리 분포      (bar)
+                                        · 일별 수집 추이     (line)
+                                        · 감정 시계열        (area/bar)
+                                        · 카테고리별 감성    (bar) ¹
+
+                                        ❌ 데이터 부족
+                                        → 해당 차트 빈 상태로 스킵
+                                        ❌ OSError (저장 실패)
+                                        → 경고 로그 후 계속 진행
+                                        ─────────────────────────
+                      │                         │
+    ──────────────────▼──────────    ───────────▼──────────────────────────
+
+    📁 output/exports/               📁 output/reports/
+    ─────────────────                ─────────────────
+    · export_*.csv                   · report_*.txt
+    · export_*.json                  · report_*.md
+    · export_*.xlsx
+                                     📁 output/charts/
+                                     ────────────────
+                                     · chart_*.png
+
+    ───────────────────────────────────────────────────────────────────────
+
+    📁 logs/news_pipeline.log  ◄──── 모든 서브커맨드 공통 / 에러 및 경고 전체 기록
+
+══════════════════════════════════════════════════════════════════════════
+
+  범례
+  ────
+  ❌ 에러 / 예외 발생 지점
+  🛑 즉시 종료 (sys.exit / raise)
+  →  처리 방향
+  ¹  category 필터 지정 시 카테고리별 감성 차트는 숨김 처리
+
+══════════════════════════════════════════════════════════════════════════
+```
+
+<br>
+</details>
+
 
 ---
 

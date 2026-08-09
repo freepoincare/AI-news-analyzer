@@ -1,0 +1,33 @@
+{
+    "database": {
+        "path": "data/news.db"
+    },
+
+    "news": {
+        "language": "en",
+        "sources": {
+            "rss": {
+                "url": "https://news.google.com/rss/search"
+            },
+            "api": {
+                "url": "https://newsapi.org/v2/everything"
+            },
+            "crawler": {
+                "url": "https://search.naver.com/search.naver"
+            }
+        }
+    },
+
+    "cleaning": {
+        "duplicate_policy": "skip"
+    },
+
+    "logging": {
+        "level": "INFO",
+        "file": "logs/news_pipeline.log"
+    },
+
+    "ai": {
+        "model": "gemini-3.5-flash"
+    }
+}

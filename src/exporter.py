@@ -168,7 +168,7 @@ def export_news(args):
     # --- Build output file path ---
     EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename  = f"news_{status}_{timestamp}.{fmt if fmt != 'xlsx' else 'xlsx'}"
+    filename  = f"export_{status}_{timestamp}.{fmt if fmt != 'xlsx' else 'xlsx'}"
     out_path  = EXPORTS_DIR / filename
 
     # --- Dispatch to correct exporter ---

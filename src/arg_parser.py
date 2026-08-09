@@ -61,13 +61,6 @@ def parse_arguments():
     show_parser = subparsers.add_parser("show", help="Show details of a news article")
     show_parser.add_argument("--id", type=int, required=True, help="ID of the article to display")
 
-    # category (not required): The category values can instead come from your SQLite database.
-    # category_parser = subparsers.add_parser("category", help="Manage news categories")
-    # category_group = category_parser.add_mutually_exclusive_group(required=True)
-    # category_group.add_argument("--list", action="store_true", help="List all categories")
-    # category_group.add_argument("--add", type=str, help="Add a new category")
-    # category_group.add_argument("--remove", type=str, help="Remove an existing category")
-
     args = parser.parse_args()
 
     if getattr(args, "date_from", None) and getattr(args, "date_to", None):

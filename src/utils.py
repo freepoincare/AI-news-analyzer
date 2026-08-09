@@ -15,7 +15,7 @@ def validate_date(date_string):
     if date.date() > today:
         raise argparse.ArgumentTypeError("Future dates are not allowed.")
     
-    return date
+    return date.strftime("%Y-%m-%d")  # return the date in YYYY-MM-DD format
 
 
 def format_date_only(val):

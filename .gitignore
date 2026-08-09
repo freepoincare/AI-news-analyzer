@@ -31,9 +31,11 @@ archive/
 # --- Logs ---
 logs/
 app.log
+news_pipeline.log
 
-# --- tests ---
-test_collector.py
+# --- Config ---
+config.json
+!config.template.json
 
 # --- Data Files ---
 data/*
@@ -41,3 +43,7 @@ data/*
 
 # --- Output Files ---
 output/*
+!output/.gitkeep
+!output/charts/.gitkeep
+!output/exports/.gitkeep
+!output/reports/.gitkeep
