@@ -491,6 +491,27 @@ def get_report_stats(category=None, date_from=None, date_to=None):
     conditions = []
     params = []
 
+    from datetime import datetime, date
+    from .utils import format_date_only
+
+    def _to_date(val):
+        if not val:
+            return None
+        if isinstance(val, date):
+            return val.date() if isinstance(val, datetime) else val
+        if isinstance(val, str):
+            s = val.strip().split(" ")[0].split("T")[0]
+            try:
+                return datetime.strptime(s, "%Y-%m-%d").date()
+            except ValueError:
+                return None
+        return None
+
+    d_from_obj = _to_date(date_from)
+    d_to_obj = _to_date(date_to)
+    d_from_str = format_date_only(date_from)
+    d_to_str = format_date_only(date_to)
+
     if category:
         conditions.append("category = ?")
         params.append(category)
@@ -498,35 +519,33 @@ def get_report_stats(category=None, date_from=None, date_to=None):
     else:
         raw_category_cond = None
 
-    if date_from:
+    if d_from_str:
         conditions.append("published_at >= ?")
-        params.append(date_from)
-    if date_to:
+        params.append(d_from_str)
+    if d_to_str:
         conditions.append("published_at <= ?")
-        params.append(date_to)
+        params.append(d_to_str)
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
-    # Build WHERE clause for raw_news (using published_at or created_at if needed, but here raw_news has published_at and category)
-    raw_conditions = []
-    raw_params = []
-
-    if category:
-        raw_conditions.append("category = ?")
-        raw_params.append(category)    
-    if date_from:
-        raw_conditions.append("published_at >= ?")
-        raw_params.append(date_from)
-    if date_to:
-        raw_conditions.append("published_at <= ?")
-        raw_params.append(date_to)
-
-    raw_where_clause = f"WHERE {' AND '.join(raw_conditions)}" if raw_conditions else ""
-
     with get_connection() as connection:
-        total_raw = connection.execute(
-            f"SELECT COUNT(*) FROM raw_news {raw_where_clause}", raw_params
-        ).fetchone()[0]
+        raw_rows = connection.execute(
+            "SELECT category, published_at FROM raw_news"
+        ).fetchall()
+
+        from .cleaner import _normalize_date
+
+        total_raw = 0
+        for r in raw_rows:
+            if category and r["category"] != category:
+                continue
+            norm_date_str = _normalize_date(r["published_at"])
+            row_date_obj = _to_date(norm_date_str)
+            if d_from_obj and row_date_obj and row_date_obj < d_from_obj:
+                continue
+            if d_to_obj and row_date_obj and row_date_obj > d_to_obj:
+                continue
+            total_raw += 1
 
         total_clean = connection.execute(
             f"SELECT COUNT(*) FROM clean_news {where_clause}", params
