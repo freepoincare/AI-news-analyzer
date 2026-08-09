@@ -345,11 +345,10 @@ def generate_report(args):
         else:
             scope_str = " with matching category or period filters"
 
-        logger.error(
+        logger.warning(
             f"No AI insight found matching the requested scope ({scope_str.strip()}). "
-            f"Please run 'python main.py analyze'{scope_str} first."
+            f"Please run 'python main.py analyze'{scope_str} for AI insights."
         )
-        return
 
     # --- Build report content ---
     if fmt == "md":

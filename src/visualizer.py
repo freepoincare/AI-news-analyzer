@@ -77,7 +77,7 @@ def plot_category_distribution(category_counts, *, ax=None):
     if standalone:
         fig, ax = plt.subplots(figsize=(10, max(4, len(categories) * 0.55)))
 
-    bars = ax.barh(categories[::-1], counts[::-1], color=bar_colors[::-1], edgecolor="white")
+    bars = ax.barh(categories[::-1], counts[::-1], color=bar_colors[::-1], edgecolor="white", alpha=0.85)
 
     # Value labels on bars
     for bar, val in zip(bars, counts[::-1]):
@@ -86,8 +86,8 @@ def plot_category_distribution(category_counts, *, ax=None):
             str(val), va="center", ha="left", fontsize=8, color="#333333"
         )
 
-    ax.set_xlabel("Article Count", fontsize=10)
-    ax.set_title("News Distribution by Category", fontsize=12, fontweight="bold", pad=10)
+    ax.set_xlabel("Article Count", fontsize=12)
+    ax.set_title("News Distribution by Category", fontsize=16, fontweight="bold", pad=10)
     ax.spines[["top", "right"]].set_visible(False)
     ax.set_xlim(0, max(counts) * 1.18)
     ax.tick_params(axis="y", labelsize=9)
@@ -141,9 +141,9 @@ def plot_daily_trend(daily_counts, *, ax=None):
             ha="center", fontsize=7, color="#333333"
         )
 
-    ax.set_xlabel("Date", fontsize=10)
-    ax.set_ylabel("Article Count", fontsize=10)
-    ax.set_title("Daily Collection Trend", fontsize=12, fontweight="bold", pad=10)
+    ax.set_xlabel("Date", fontsize=12)
+    ax.set_ylabel("Article Count", fontsize=12)
+    ax.set_title("Daily Collection Trend", fontsize=16, fontweight="bold", pad=10)
     ax.spines[["top", "right"]].set_visible(False)
 
     if len(dates) > 7:
@@ -201,12 +201,12 @@ def plot_sentiment_over_time(sentiment_data, *, ax=None):
         bottoms = [0] * num_dates
         for s, label, color in zip(sentiments, labels, colors):
             vals = [row.get(s, 0) for row in sentiment_data]
-            ax.bar(dates, vals, bottom=bottoms, label=label, color=color, edgecolor="white")
+            ax.bar(dates, vals, bottom=bottoms, label=label, color=color, edgecolor="white", alpha=0.85)
             bottoms = [b + v for b, v in zip(bottoms, vals)]
 
-    ax.set_xlabel("Published Date", fontsize=10)
-    ax.set_ylabel("Article Count", fontsize=10)
-    ax.set_title("Sentiment Over Time", fontsize=12, fontweight="bold", pad=10)
+    ax.set_xlabel("Published Date", fontsize=12)
+    ax.set_ylabel("Article Count", fontsize=12)
+    ax.set_title("Sentiment Over Time", fontsize=16, fontweight="bold", pad=10)
     ax.spines[["top", "right"]].set_visible(False)
 
     if len(dates) > 7:
@@ -256,12 +256,12 @@ def plot_sentiment_by_category(sentiment_cat_data, *, ax=None):
     bottoms = [0] * len(categories)
     for s, label, color in zip(sentiments, labels, colors):
         vals = [row.get(s, 0) for row in sentiment_cat_data]
-        ax.bar(categories, vals, bottom=bottoms, label=label, color=color, edgecolor="white")
+        ax.bar(categories, vals, bottom=bottoms, label=label, color=color, edgecolor="white", alpha=0.85)
         bottoms = [b + v for b, v in zip(bottoms, vals)]
 
-    ax.set_xlabel("Category", fontsize=10)
-    ax.set_ylabel("Article Count", fontsize=10)
-    ax.set_title("Sentiment by Category", fontsize=12, fontweight="bold", pad=10)
+    ax.set_xlabel("Category", fontsize=12)
+    ax.set_ylabel("Article Count", fontsize=12)
+    ax.set_title("Sentiment by Category", fontsize=16, fontweight="bold", pad=10)
     ax.spines[["top", "right"]].set_visible(False)
 
     if len(categories) > 5:
@@ -340,7 +340,7 @@ def generate_charts(stats, *, category=None, timestamp=None, output_dir=CHARTS_D
         logger.warning("visualizer: No charts were generated -- no data available.")
         return None
 
-    fig.suptitle("AI News Analyzer -- Charts", fontsize=16, fontweight="bold", y=1.01)
+    fig.suptitle("AI News Analyzer - Charts", fontsize=20, fontweight="bold", y=1.01)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
