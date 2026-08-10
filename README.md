@@ -22,8 +22,8 @@ An automated, CLI-driven data pipeline that collects news from multiple sources,
 
 **AI News Analyzer** demonstrates an end-to-end data pipeline in Python:
 1. **Fetch**: Collects raw news articles via RSS feeds, NewsAPI, or web crawling.
-2. **Clean**: Normalizes text and dates, handles missing values, and enforces deduplication policies (`skip` / `upsert`).
-3. **Summarize**: Generates 3~5 sentence summaries per article using **Google Gemini**.
+2. **Clean**: Normalizes text and dates, handles missing values, extract full article content, and enforces deduplication policies (`skip` / `upsert`).
+3. **Summarize**: Generates 3~5 sentence summaries per article and sentiment analysis using **Google Gemini**.
 4. **Analyze**: Batch-analyzes filtered articles to produce structured trend insights (Key Trends, Core Keywords, Commonalities/Differences, Implications).
 5. **Report**: Aggregates dataset metrics, draws `matplotlib` charts, and compiles Markdown/TXT reports.
 6. **Export**: Exports dataset records to CSV, JSONL, or Excel formats.
@@ -35,7 +35,7 @@ An automated, CLI-driven data pipeline that collects news from multiple sources,
 - 🌐 **Multi-Source Fetching**: Support for RSS feeds, NewsAPI, and Web Crawling (BeautifulSoup4 / Selenium).
 - 🧹 **Raw/Clean Storage Separation**: Raw data archived in `raw_news`; clean deduplicated data promoted to `clean_news`.
 - 🤖 **AI-Powered Summarization & Insights**: Uses `google-genai` SDK with fallback error handling per article.
-- 📈 **Automated Data Visualization**: Generates Category Distribution bar charts and Daily Collection Trend line charts.
+- 📈 **Automated Data Visualization**: Generates Category Distribution bar charts, Daily Collection Trend line, and Sentiment Analysis charts.
 - 📄 **Multi-Format Reporting**: Produces formatted Markdown (`.md`) and Text (`.txt`) summary reports with embedded charts.
 - 💾 **Data Exporting**: Exports clean news records to CSV, JSONL, or Excel (`.xlsx`) with customizable filtering.
 - 🔍 **News Query & Browsing**: CLI subcommands (`list`, `show`) to search and view stored articles.
@@ -162,7 +162,7 @@ python main.py [ fetch | clean | summarize | analyze | report | export | list | 
 
 ### 1. Fetch News (`fetch`)
 ```bash
-# Fetch technology news via RSS
+# Fetch technology news via Google News RSS
 python main.py fetch --source rss --category technology --query semiconductor
 
 # Fetch via NewsAPI
@@ -172,6 +172,7 @@ python main.py fetch --source api --category technology --query "artificial inte
 python main.py fetch --source crawler --category technology --query AI --limit 5
 ```
 * `limit=10` is default
+* `--date-from` and `--date-to` are optional; they are not applied to RSS, but to NewsAPI.
 
 ### 2. Clean & Deduplicate Data (`clean`)
 ```bash
