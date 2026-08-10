@@ -24,7 +24,7 @@
 
     "logging": {
         "level": "INFO",
-        "file": "logs/news_pipeline.log"
+        "file": "logs/app.log"
     },
 
     "ai": {

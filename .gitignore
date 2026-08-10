@@ -39,8 +39,5 @@ data/*
 !data/.gitkeep
 
 # --- Output Files ---
-output/*
-!output/.gitkeep
-!output/charts/.gitkeep
-!output/exports/.gitkeep
-!output/reports/.gitkeep
+#output/*
+#!output/.gitkeep

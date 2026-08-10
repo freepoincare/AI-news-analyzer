@@ -69,7 +69,7 @@ def export_to_csv(records, out_path):
         writer.writeheader()
         writer.writerows(records)
 
-    logger.info(f"exporter: CSV saved -> {out_path} ({len(records)} rows)")
+    #logger.info(f"exporter: CSV saved -> {out_path} ({len(records)} rows)")
     return out_path
 
 
@@ -87,7 +87,7 @@ def export_to_jsonl(records, out_path):
             row = {col: record.get(col) for col in EXPORT_COLUMNS}
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    logger.info(f"exporter: JSONL saved -> {out_path} ({len(records)} rows)")
+    #logger.info(f"exporter: JSONL saved -> {out_path} ({len(records)} rows)")
     return out_path
 
 
@@ -130,7 +130,7 @@ def export_to_excel(records, out_path):
         ws.column_dimensions[col_cells[0].column_letter].width = min(max_len + 2, 60)
 
     wb.save(out_path)
-    logger.info(f"exporter: Excel saved -> {out_path} ({len(records)} rows)")
+    #logger.info(f"exporter: Excel saved -> {out_path} ({len(records)} rows)")
     return out_path
 
 

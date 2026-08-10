@@ -2,6 +2,8 @@
 
 An automated, CLI-driven data pipeline that collects news from multiple sources, cleans and deduplicates records in SQLite, performs AI summarization and trend insight analysis using Google Gemini, generates charts & reports, and exports data to multiple formats.
 
+🕒 Development Period: 3 Aug 2026 (Mon) - 9 Aug 2026 (Sun)
+
 ---
 
 ## 📌 Table of Contents
@@ -64,7 +66,7 @@ ai-news-analyzer/
 ├── data/
 │   └── news.db              # SQLite database (raw_news, clean_news, insights)
 ├── logs/
-│   └── news_pipeline.log    # Pipeline execution log file
+│   └── app.log              # Pipeline execution log file
 ├── output/                  # Output folder (automatic generation)
 │   ├── charts/              # Generated matplotlib chart images (PNG)
 │   ├── exports/             # Exported files (CSV, JSONL, XLSX)
@@ -160,6 +162,8 @@ python main.py --help  # or '-h'
 python main.py [ fetch | clean | summarize | analyze | report | export | list | show] -h
 ```
 
+> Note: The program does not accept future dates or invalid date formats for `--date-from` and `--date-to` options.
+
 ### 1. Fetch News (`fetch`)
 ```bash
 # Fetch technology news via Google News RSS
@@ -200,7 +204,7 @@ python main.py summarize --all
 > Requires `GEMINI_API_KEY`
 ```bash
 # Perform trend insight analysis for a category and date range
-python main.py analyze --category technology --date-from 2026-01-01 --date-to 2026-12-31
+python main.py analyze --category technology --date-from 2026-08-01 --date-to 2026-08-10
 ```
 
 ### 5. Generate Report & Charts (`report`)
@@ -241,6 +245,47 @@ python main.py show --id 5
 
 ---
 
+<details>
+<summary>[🖥️ CLI Demo]</summary>
+<br>
+
+### 1. fetch
+
+<img src="./asset/images/fetch.png" width="700">
+
+### 2. clean
+
+<img src="./asset/images/clean.png" width="550">
+
+### 3. summarize
+
+<img src="./asset/images/summarize.png" width="600">
+
+### 4. analyze
+
+<img src="./asset/images/analyze.png" width="550">
+
+### 5. report
+
+<img src="./asset/images/report.png" width="700">
+
+### 6. export
+
+<img src="./asset/images/export.png" width="700">
+
+### 7. list
+
+<img src="./asset/images/list.png" width="600">
+
+### 8. show
+
+<img src="./asset/images/show.png" width="600">
+
+<br>
+</details>
+
+---
+
 ## 📊 Checking Output Files
 
 After running pipeline commands, output files are organized as follows:
@@ -248,10 +293,31 @@ After running pipeline commands, output files are organized as follows:
 | Output Type | File Location | Description |
 |---|---|---|
 | **Database** | `data/news.db` | SQLite database storing `raw_news`, `clean_news`, and `insights`. |
-| **Logs** | `logs/news_pipeline.log` | Execution logs containing timestamps and log levels. |
+| **Logs** | `logs/app.log` | Execution logs containing timestamps and log levels. |
 | **Charts** | `output/charts/chart_YYYYMMDD_HHMMSS.png` | 3~4 charts into a single 2x2 grid image. |
 | **Reports** | `output/reports/report_YYYYMMDD_HHMMSS.md` | Comprehensive analysis report in Markdown format. |
 | **Exports** | `output/exports/export_status_YYYYMMDD_HHMMSS.csv` | Exported dataset files (CSV, JSONL, XLSX). |
+
+<details>
+<summary>[📈 Chart, Report, Exported files - Example]</summary>
+<br>
+
+### 1. Chart example
+
+<img src="./asset/images/chart.png" width="700">
+
+### 2. Report example
+
+[\[Report w/o scope\]](./output/reports/report_20260810_193203.md)
+
+[\[Report with scope\]](./output/reports/report_20260810_193450.md)
+
+### 3. Export folder
+
+[\[Export folder link\]](./output/export/)
+
+<br>
+</details>
 
 ---
 
@@ -400,8 +466,8 @@ After running pipeline commands, output files are organized as follows:
 
     ───────────────────────────────────────────────────────────────────────
 
-    📁 logs/news_pipeline.log  ◄──── Shared across all subcommands
-                                     Records all errors and warnings
+    📁 logs/app.log  ◄──── Shared across all subcommands
+                            Records all errors and warnings
 
 ══════════════════════════════════════════════════════════════════════════
 
