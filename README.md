@@ -314,7 +314,7 @@ After running pipeline commands, output files are organized as follows:
 
 ### 3. Export folder
 
-[\[Export jsonl example\]](./output/export/export_summarized_20260810_202618.jsonl)
+[\[Export jsonl example\]](./output/exports/export_summarized_20260810_202618.jsonl)
 
 <br>
 </details>
