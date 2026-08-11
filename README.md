@@ -298,6 +298,139 @@ After running pipeline commands, output files are organized as follows:
 | **Reports** | `output/reports/report_YYYYMMDD_HHMMSS.md` | Comprehensive analysis report in Markdown format. |
 | **Exports** | `output/exports/export_status_YYYYMMDD_HHMMSS.csv` | Exported dataset files (CSV, JSONL, XLSX). |
 
+---
+
+<details>
+<summary>[🗃️ SQLite Database CLI Check]</summary>
+<br>
+
+### 1. Open the DB first:
+
+```bash
+sqlite3 data/news.db
+```
+
+<img src="./asset/images/db_1.png" width="300">
+
+### 2. Schema Inspection
+
+```bash
+.tables                      # list all tables
+.schema raw_news             # show CREATE TABLE for raw_news
+.schema clean_news
+.schema insights
+PRAGMA table_info(clean_news);  # column names, types, nullability
+```
+
+> Tip: Use `.mode column` and `.headers on` in the SQLite shell for readable output.
+
+<img src="./asset/images/db_7.png" width="350">
+
+### 3. Overview / Row Counts:
+
+```bash
+# Total records per table
+SELECT COUNT(*) AS total FROM raw_news;
+SELECT COUNT(*) AS total FROM clean_news;
+SELECT COUNT(*) AS total FROM insights;
+```
+
+<img src="./asset/images/db_2.png" width="300">
+
+### 4. `raw_news` - Collection Stats
+
+```bash
+# Records by category
+SELECT category, COUNT(*) AS count FROM raw_news GROUP BY category ORDER BY count DESC;
+
+# Records by source
+SELECT source, COUNT(*) AS count FROM raw_news GROUP BY source ORDER BY count DESC;
+```
+
+<img src="./asset/images/db_3.png" width="600">
+
+### 5. `clean_news` - Pipeline & Summarization Stats
+
+```bash
+# Summarization status breakdown
+SELECT status, COUNT(*) AS count FROM clean_news GROUP BY status;
+
+# Sentiment distribution
+SELECT sentiment, COUNT(*) AS count FROM clean_news GROUP BY sentiment;
+
+# Category breakdown
+SELECT category, COUNT(*) AS count FROM clean_news GROUP BY category ORDER BY count DESC;
+
+# Content source breakdown (how full content was fetched)
+SELECT content_source, COUNT(*) AS count FROM clean_news GROUP BY content_source;
+
+# Summarized vs. unsummarized by category
+SELECT category, status, COUNT(*) AS count
+FROM clean_news GROUP BY category, status ORDER BY category;
+
+# Sentiment by category
+SELECT category, sentiment, COUNT(*) AS count
+FROM clean_news WHERE sentiment IS NOT NULL
+GROUP BY category, sentiment ORDER BY category;
+
+# Daily collection trend (clean)
+SELECT DATE(collected_at) AS day, COUNT(*) AS count
+FROM clean_news GROUP BY day ORDER BY day DESC;
+
+# Daily published_at trend
+SELECT DATE(published_at) AS pub_date, COUNT(*) AS count
+FROM clean_news WHERE published_at IS NOT NULL
+GROUP BY pub_date ORDER BY pub_date DESC;
+
+# Articles missing summary
+SELECT id, title, category, collected_at FROM clean_news WHERE status = 'unsummarized';
+
+# Most recent articles
+SELECT id, title, source, category, published_at, status
+FROM clean_news ORDER BY collected_at DESC LIMIT 10;
+```
+
+<img src="./asset/images/db_4.png" width="600">
+
+<img src="./asset/images/db_5.png" width="400">
+
+### 6. `insights` - AI Analysis Records
+
+```bash
+# All insight runs (scope + article count)
+SELECT id, analyzed_at, category, date_from, date_to, article_count FROM insights ORDER BY analyzed_at DESC;
+
+# Insights by category
+SELECT category, COUNT(*) AS runs, SUM(article_count) AS total_articles
+FROM insights GROUP BY category;
+
+# Most recent insight
+SELECT * FROM insights ORDER BY analyzed_at DESC LIMIT 1;
+```
+
+<img src="./asset/images/db_6.png" width="700">
+
+### 7. Cross-Table Stats
+
+```bash
+# Raw vs. clean funnel (how many raws were promoted)
+SELECT
+  (SELECT COUNT(*) FROM raw_news)   AS raw_total,
+  (SELECT COUNT(*) FROM clean_news) AS clean_total,
+  ROUND(
+    (SELECT COUNT(*) FROM clean_news) * 100.0 / (SELECT COUNT(*) FROM raw_news), 1
+  ) AS promotion_rate_pct;
+
+# Clean articles with summary and sentiment filled
+SELECT COUNT(*) AS fully_processed
+FROM clean_news WHERE summary IS NOT NULL AND sentiment IS NOT NULL;
+```
+
+<br>
+</details>
+
+---
+
 <details>
 <summary>[📈 Chart, Report, Exported files - Example]</summary>
 <br>
@@ -314,7 +447,7 @@ After running pipeline commands, output files are organized as follows:
 
 ### 3. Export folder
 
-[\[Export jsonl example\]](./output/exports/export_summarized_20260810_202618.jsonl)
+[\[Export jsonl example\]](./output/exports/)
 
 <br>
 </details>
